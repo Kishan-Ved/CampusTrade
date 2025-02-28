@@ -1,3 +1,4 @@
+drop database if exists CampusTrade;
 CREATE DATABASE CampusTrade;
 USE CampusTrade;
 
@@ -8,7 +9,7 @@ CREATE TABLE member (
     Password VARCHAR(255) NOT NULL,
     Contact_No VARCHAR(15) NOT NULL UNIQUE,
     Age INT NOT NULL,
-    Profile_Image VARCHAR(255) DEFAULT NULL,
+    Profile_Image LONGBLOB DEFAULT NULL,
     Role ENUM('Student', 'Faculty', 'Staff') NOT NULL,
     Registered_On TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -104,9 +105,9 @@ CREATE TABLE searches (
 
 -- Insert members
 INSERT INTO member (Name, Email, Password, Contact_No, Age, Profile_Image, Role) VALUES
-('Alice Johnson', 'alice@example.com', 'hashedpassword1', '9876543210', 22, NULL, 'Student'),
-('Bob Smith', 'bob@example.com', 'hashedpassword2', '9876543211', 35, NULL, 'Faculty'),
-('Charlie Brown', 'charlie@example.com', 'hashedpassword3', '9876543212', 28, NULL, 'Staff');
+('Alice Johnson', 'alice@example.com', 'hashedpassword1', '9876543210', 22, load_file('/var/lib/mysql-files/Screenshot from 2025-02-28 19-31-16.png'), 'Student'),
+('Bob Smith', 'bob@example.com', 'hashedpassword2', '9876543211', 35, load_file('/var/lib/mysql-files/Screenshot from 2025-02-28 19-31-32.png'), 'Faculty'),
+('Charlie Brown', 'charlie@example.com', 'hashedpassword3', '9876543212', 28, load_file('/var/lib/mysql-files/Screenshot from 2025-02-28 19-31-42.png'), 'Staff');
 
 -- Insert categories
 INSERT INTO category (Category_Name) VALUES
@@ -166,5 +167,7 @@ FROM transaction_listing t
 JOIN member b ON t.Buyer_ID = b.Member_ID
 JOIN member s ON t.Seller_ID = s.Member_ID
 JOIN product_listing p ON t.Product_ID = p.Product_ID;
-
-
+SHOW VARIABLES LIKE 'secure_file_priv';
+SHOW GRANTS FOR CURRENT_USER;
+SET GLOBAL local_infile = 1;
+select * from member;
