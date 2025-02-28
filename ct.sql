@@ -240,7 +240,7 @@ INSERT INTO credit_logs (Member_ID, Balance) VALUES
 (14, 0.00),
 (15, 0.00);
 
--- Insert wishlist
+-- Insert wishlist (only unsold items present in the wishlist for members)
 INSERT INTO wishlist (Member_ID, Product_ID) VALUES
 (1, 11),
 (2, 11),
