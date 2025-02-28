@@ -242,16 +242,16 @@ INSERT INTO credit_logs (Member_ID, Balance) VALUES
 
 -- Insert wishlist
 INSERT INTO wishlist (Member_ID, Product_ID) VALUES
-(1, 6),
-(2, 1),
-(3, 4),
-(4, 5),
-(4, 7),
-(6, 2),
-(7, 9),
-(7, 10),
-(9, 3),
-(10, 8);
+(1, 11),
+(2, 11),
+(3, 12),
+(4, 11),
+(4, 13),
+(6, 13),
+(7, 12),
+(7, 13),
+(9, 11),
+(10, 13);
 
 -- Insert reviews and ratings
 INSERT INTO reviews_ratings (Reviewer_ID, Reviewed_User_ID, Rating, Review_Text) VALUES
