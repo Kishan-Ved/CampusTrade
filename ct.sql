@@ -211,18 +211,40 @@ INSERT INTO reviews_ratings (Reviewer_ID, Reviewed_User_ID, Rating, Review_Text)
 (1, 9, 4, 'Football was new, but packaging was missing.'),
 (2, 10, 5, 'Lab coat was clean and fit perfectly.');
 
--- Insert report analytics
-INSERT INTO report_analytics (Report_Type) VALUES
-('Top-Selling Products'),
-('Most Active Users'),
-('Faculty vs Student Transactions'),
-('Highest Rated Sellers'),
-('Most Purchased Categories'),
-('Trending Course Materials'),
-('Payment Method Analysis'),
-('Wishlist Trends'),
-('Complaint Summary'),
-('Monthly Transaction Report');
+
+-- -- Insert report analytics
+-- INSERT INTO report_analytics (Report_Type) VALUES
+-- ('Top-Selling Products'),
+-- ('Most Active Users'),
+-- ('Faculty vs Student Transactions'),
+-- ('Highest Rated Sellers'),
+-- ('Most Purchased Categories'),
+-- ('Trending Course Materials'),
+-- ('Payment Method Analysis'),
+-- ('Wishlist Trends'),
+-- ('Complaint Summary'),
+-- ('Monthly Transaction Report');
+
+-- for generating reports, we first need to fetch information (ex. max sales, most active users, etc.) 
+-- by running corresponding queries, and then inserting the results into the reports table
+-- example:
+SELECT Seller_ID, COUNT(*) AS Total_Sales, SUM(Price) AS Total_Revenue
+FROM transaction_listing
+JOIN product_listing ON transaction_listing.Product_ID = product_listing.Product_ID
+WHERE transaction_listing.Payment_Method = 'Cash' OR transaction_listing.Payment_Method = 'Credit'
+GROUP BY Seller_ID;
+
+INSERT INTO report_analytics (Report_Type)
+SELECT 
+    CONCAT('Seller ', Seller_ID, ': ', Total_Sales, ' sales, Revenue: $', Total_Revenue)
+FROM (
+    SELECT Seller_ID, COUNT(*) AS Total_Sales, SUM(Price) AS Total_Revenue
+    FROM transaction_listing
+    JOIN product_listing ON transaction_listing.Product_ID = product_listing.Product_ID
+    WHERE transaction_listing.Payment_Method = 'Cash' OR transaction_listing.Payment_Method = 'Credit'
+    GROUP BY Seller_ID
+) AS SalesReport;
+
 
 -- Insert complaints (Realistic issues for university context)
 INSERT INTO complaints (Member_ID, Description, Status) VALUES
