@@ -228,23 +228,25 @@ INSERT INTO reviews_ratings (Reviewer_ID, Reviewed_User_ID, Rating, Review_Text)
 -- for generating reports, we first need to fetch information (ex. max sales, most active users, etc.) 
 -- by running corresponding queries, and then inserting the results into the reports table
 -- example:
-SELECT Seller_ID, COUNT(*) AS Total_Sales, SUM(Price) AS Total_Revenue
+SELECT transaction_listing.Seller_ID, COUNT(*) AS Total_Sales, SUM(product_listing.Price) AS Total_Revenue
 FROM transaction_listing
 JOIN product_listing ON transaction_listing.Product_ID = product_listing.Product_ID
 WHERE transaction_listing.Payment_Method = 'Cash' OR transaction_listing.Payment_Method = 'Credit'
-GROUP BY Seller_ID;
+GROUP BY transaction_listing.Seller_ID;
 
 INSERT INTO report_analytics (Report_Type)
 SELECT 
     CONCAT('Seller ', Seller_ID, ': ', Total_Sales, ' sales, Revenue: $', Total_Revenue)
 FROM (
-    SELECT Seller_ID, COUNT(*) AS Total_Sales, SUM(Price) AS Total_Revenue
+    SELECT transaction_listing.Seller_ID, COUNT(*) AS Total_Sales, SUM(product_listing.Price) AS Total_Revenue
     FROM transaction_listing
     JOIN product_listing ON transaction_listing.Product_ID = product_listing.Product_ID
     WHERE transaction_listing.Payment_Method = 'Cash' OR transaction_listing.Payment_Method = 'Credit'
-    GROUP BY Seller_ID
+    GROUP BY transaction_listing.Seller_ID
 ) AS SalesReport;
 
+-- In this manner, reports can be generated for whatever aspects we wish to analyse
+-- We have only showed one particular example
 
 -- Insert complaints (Realistic issues for university context)
 INSERT INTO complaints (Member_ID, Description, Status) VALUES
@@ -290,4 +292,5 @@ JOIN product_listing p ON t.Product_ID = p.Product_ID;
 SHOW VARIABLES LIKE 'secure_file_priv';
 SHOW GRANTS FOR CURRENT_USER;
 SET GLOBAL local_infile = 1;
+SELECT * from report_analytics;
 select * from member;
