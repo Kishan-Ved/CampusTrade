@@ -104,77 +104,22 @@ CREATE TABLE searches (
 );
 
 -- Insert members
--- INSERT INTO member (Name, Email, Password, Contact_No, Age, Profile_Image, Role) VALUES
--- ('Alice Johnson', 'alice@example.com', 'hashedpassword1', '9876543210', 22, load_file('/var/lib/mysql-files/Screenshot from 2025-02-28 19-31-16.png'), 'Student'),
--- ('Bob Smith', 'bob@example.com', 'hashedpassword2', '9876543211', 35, load_file('/var/lib/mysql-files/Screenshot from 2025-02-28 19-31-32.png'), 'Faculty'),
--- ('Charlie Brown', 'charlie@example.com', 'hashedpassword3', '9876543212', 28, load_file('/var/lib/mysql-files/Screenshot from 2025-02-28 19-31-42.png'), 'Staff');
-
--- Insert categories
--- INSERT INTO category (Category_Name) VALUES
--- ('Electronics'),
--- ('Books'),
--- ('Furniture');
-
--- Insert products
--- INSERT INTO product_listing (Seller_ID, Title, Description, Price, Category_ID, Condition_, Image_URL) VALUES
--- (1, 'Laptop', 'Used MacBook Pro, 16GB RAM, 512GB SSD', 800.00, 1, 'Used', NULL),
--- (2, 'Python Programming Book', 'Learn Python from scratch', 20.00, 2, 'New', NULL),
--- (3, 'Office Chair', 'Ergonomic office chair with lumbar support', 50.00, 3, 'Used', NULL);
-
--- Insert transactions
--- INSERT INTO transaction_listing (Buyer_ID, Seller_ID, Product_ID, Payment_Method) VALUES
--- (2, 1, 1, 'Cash'),
--- (3, 2, 2, 'Credit');
-
--- Insert credit logs
--- INSERT INTO credit_logs (Member_ID, Balance) VALUES
--- (1, 100.00),
--- (2, 200.50),
--- (3, 50.00);
-
--- Insert wishlist items
--- INSERT INTO wishlist (Member_ID, Product_ID) VALUES
--- (1, 2),
--- (2, 3);
-
--- Insert reviews and ratings
--- INSERT INTO reviews_ratings (Reviewer_ID, Reviewed_User_ID, Rating, Review_Text) VALUES
--- (1, 2, 5, 'Great experience, highly recommend!'),
--- (3, 1, 4, 'Smooth transaction.');
-
--- Insert report analytics
--- INSERT INTO report_analytics (Report_Type) VALUES
--- ('Monthly Sales Report'),
--- ('User Activity Report');
-
--- Insert complaints
--- INSERT INTO complaints (Member_ID, Description, Status) VALUES
--- (1, 'Received a faulty product.', 'Open'),
--- (3, 'Seller was unresponsive.', 'Resolved');
-
--- Insert searches
--- INSERT INTO searches (Member_ID, Query) VALUES
--- (1, 'Laptop'),
--- (2, 'Office Chair');
-
-
--- Insert members
 INSERT INTO member (Name, Email, Password, Contact_No, Age, Profile_Image, Role) VALUES
-('Alice Johnson', 'alice@example.com', 'hashedpassword1', '9876543210', 22, NULL, 'Student'),
-('Bob Smith', 'bob@example.com', 'hashedpassword2', '9876543211', 35, NULL, 'Faculty'),
-('Charlie Brown', 'charlie@example.com', 'hashedpassword3', '9876543212', 28, NULL, 'Staff'),
-('David Lee', 'david@example.com', 'hashedpassword4', '9876543213', 25, NULL, 'Student'),
-('Eva Green', 'eva@example.com', 'hashedpassword5', '9876543214', 32, NULL, 'Faculty'),
-('Frank White', 'frank@example.com', 'hashedpassword6', '9876543215', 29, NULL, 'Staff'),
-('Grace Adams', 'grace@example.com', 'hashedpassword7', '9876543216', 21, NULL, 'Student'),
-('Henry Ford', 'henry@example.com', 'hashedpassword8', '9876543217', 40, NULL, 'Faculty'),
-('Ivy Clarke', 'ivy@example.com', 'hashedpassword9', '9876543218', 27, NULL, 'Staff'),
-('Jack Wilson', 'jack@example.com', 'hashedpassword10', '9876543219', 23, NULL, 'Student'),
-('Kishan Ved', 'kishan@example.com', 'hashedpassword11', '9876543220', 20, NULL, 'Student'),
-('Aditya Mehta', 'mehta@example.com', 'hashedpassword12', '9876543221', 20, NULL, 'Student'),
-('Pratham Sharda', 'ps@example.com', 'hashedpassword13', '9876543222', 20, NULL, 'Student'),
-('Nimitt', 'nimitt@example.com', 'hashedpassword14', '9876543223', 20, NULL, 'Student'),
-('Jiya Desai', 'jiya@example.com', 'hashedpassword15', '9876543224', 20, NULL, 'Student');
+('Alice Johnson', 'alice@example.com', 'hashedpassword1', '9876543210', 22, load_file('/var/lib/mysql-files/Screenshot from 2025-02-28 19-31-16.png'), 'Student'),
+('Bob Smith', 'bob@example.com', 'hashedpassword2', '9876543211', 35, load_file('/var/lib/mysql-files/Screenshot from 2025-02-28 19-31-32.png'), 'Faculty'),
+('Charlie Brown', 'charlie@example.com', 'hashedpassword3', '9876543212', 28, load_file('/var/lib/mysql-files/Screenshot from 2025-02-28 19-31-42.png'), 'Staff'),
+('David Lee', 'david@example.com', 'hashedpassword4', '9876543213', 25, load_file('/var/lib/mysql-files/Screenshot from 2025-02-28 19-31-16.png'), 'Student'),
+('Eva Green', 'eva@example.com', 'hashedpassword5', '9876543214', 32, load_file('/var/lib/mysql-files/Screenshot from 2025-02-28 19-31-42.png'), 'Faculty'),
+('Frank White', 'frank@example.com', 'hashedpassword6', '9876543215', 29, load_file('/var/lib/mysql-files/Screenshot from 2025-02-28 19-31-32.png'), 'Staff'),
+('Grace Adams', 'grace@example.com', 'hashedpassword7', '9876543216', 21, load_file('/var/lib/mysql-files/Screenshot from 2025-02-28 19-31-16.png'), 'Student'),
+('Henry Ford', 'henry@example.com', 'hashedpassword8', '9876543217', 40, load_file('/var/lib/mysql-files/Screenshot from 2025-02-28 19-31-32.png'), 'Faculty'),
+('Ivy Clarke', 'ivy@example.com', 'hashedpassword9', '9876543218', 27, load_file('/var/lib/mysql-files/Screenshot from 2025-02-28 19-31-42.png'), 'Staff'),
+('Jack Wilson', 'jack@example.com', 'hashedpassword10', '9876543219', 23, load_file('/var/lib/mysql-files/Screenshot from 2025-02-28 19-31-16.png'), 'Student'),
+('Kishan Ved', 'kishan@example.com', 'hashedpassword11', '9876543220', 20, load_file('/var/lib/mysql-files/Screenshot from 2025-02-28 19-31-42.png'), 'Student'),
+('Aditya Mehta', 'mehta@example.com', 'hashedpassword12', '9876543221', 20, load_file('/var/lib/mysql-files/Screenshot from 2025-02-28 19-31-32.png'), 'Student'),
+('Pratham Sharda', 'ps@example.com', 'hashedpassword13', '9876543222', 20, load_file('/var/lib/mysql-files/Screenshot from 2025-02-28 19-31-42.png'), 'Student'),
+('Nimitt', 'nimitt@example.com', 'hashedpassword14', '9876543223', 20, load_file('/var/lib/mysql-files/Screenshot from 2025-02-28 19-31-16.png'), 'Student'),
+('Jiya Desai', 'jiya@example.com', 'hashedpassword15', '9876543224', 20, load_file('/var/lib/mysql-files/Screenshot from 2025-02-28 19-31-32.png'), 'Student');
 
 -- Insert categories (University-relevant)
 INSERT INTO category (Category_Name) VALUES
@@ -240,7 +185,7 @@ INSERT INTO credit_logs (Member_ID, Balance) VALUES
 (14, 0.00),
 (15, 0.00);
 
--- Insert wishlist (only unsold items present in the wishlist for members)
+-- Insert wishlist
 INSERT INTO wishlist (Member_ID, Product_ID) VALUES
 (1, 11),
 (2, 11),
