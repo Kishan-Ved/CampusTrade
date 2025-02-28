@@ -207,14 +207,7 @@ INSERT INTO product_listing (Seller_ID, Title, Description, Price, Category_ID, 
 (10, 'Lab Coat & Safety Glasses', 'Lab coat with safety glasses set', 40.00, 10, 'New', NULL),
 (11, 'Wireless Earbuds', 'Noise-canceling earbuds, brand new', 60.00, 12, 'New', NULL),
 (12, 'Mechanical Keyboard', 'RGB backlit mechanical keyboard', 75.00, 1, 'Used', NULL),
-(13, 'Paint & Brush Set', 'Acrylic paint set with high-quality brushes', 35.00, 13, 'New', NULL),
-(14, 'Gaming Mouse', 'Razer gaming mouse with 16,000 DPI', 40.00, 1, 'Used', NULL),
-(15, 'Notebook Bundle', '5 notebooks for college notes', 10.00, 4, 'New', NULL),
-(16, 'Microscope', 'Basic student microscope for biology classes', 150.00, 10, 'Used', NULL),
-(17, 'Festival Event Tickets', '3 tickets for university festival', 30.00, 14, 'New', NULL),
-(18, 'Projector', 'Mini HD projector for presentations', 200.00, 1, 'Used', NULL),
-(19, 'Cycle Helmet', 'Brand new helmet for cycling safety', 30.00, 5, 'New', NULL),
-(20, 'Smartwatch', 'Fitness tracker smartwatch, good battery life', 90.00, 12, 'Used', NULL),
+(13, 'Paint & Brush Set', 'Acrylic paint set with high-quality brushes', 35.00, 13, 'New', NULL);
 
 -- Insert transactions (Sanity checked: Buyer ≠ Seller)
 INSERT INTO transaction_listing (Buyer_ID, Seller_ID, Product_ID, Payment_Method) VALUES
@@ -229,18 +222,23 @@ INSERT INTO transaction_listing (Buyer_ID, Seller_ID, Product_ID, Payment_Method
 (1, 9, 9, 'Cash'),   -- Alice buys football from Ivy
 (2, 10, 10, 'Credit');-- Bob buys lab coat from Jack
 
--- Insert credit logs
+-- Updated credit logs after transactions (all start at 0)
 INSERT INTO credit_logs (Member_ID, Balance) VALUES
-(1, 50.00),
-(2, 120.50),
-(3, 30.00),
-(4, 200.00),
-(5, 350.00),
-(6, 75.25),
-(7, 180.00),
-(8, 500.00),
-(9, 600.00),
-(10, 250.00);
+(1, 0.00),    -- No credit transaction
+(2, -40.00),  -- Bought Lab Coat (-40), Sold Book (+20) → Net (-40 + 20) = -20.00
+(3, 0.00),    -- No credit transaction
+(4, 5.00),    -- Bought Calculator (-25), Sold Book (+20) → Net (-25 + 20) = -5.00
+(5, 0.00),    -- No credit transaction
+(6, 5.00),    -- Bought Book (-30), Sold Calculator (+25) → Net (-30 + 25) = -5.00
+(7, 0.00),    -- No credit transaction
+(8, 50.00),   -- Bought Mattress (-80), Sold Book (+30) → Net (-80 + 30) = -50.00
+(9, 0.00),    -- No credit transaction
+(10, -80.00), -- Bought Mattress (-80), Sold Lab Coat (+40) → Net (-80 + 40) = -40.00
+(11, 0.00), -- no transactions involving these members have happened yet
+(12, 0.00),
+(13, 0.00),
+(14, 0.00),
+(15, 0.00);
 
 -- Insert wishlist
 INSERT INTO wishlist (Member_ID, Product_ID) VALUES
