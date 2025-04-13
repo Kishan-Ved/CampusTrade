@@ -44,21 +44,30 @@ def get_db_connection(cims = True):
     else:
         return mysql.connector.connect(**db_config_g1)
 
+
+# add member endpoint: creates entry  in the main cims member table also creates a login table entry
 @app.route('/addMember', methods=['POST'])
 def add_member():
     data = request.get_json()
-    print("hello")
+    # print("hello")
     username = data.get('username')
     email = data.get('email')
     dob = data.get('dob')
+    password = data.get('password')
+    contact_no = data.get('contact_no')
+    age = data.get('age')
+    profile_image = data.get('profile_image')
+    role = data.get('role')
 
     if not username or not email or not dob:
         return jsonify({'error': 'Missing required fields'}), 400
 
     try:
         conn = mysql.connector.connect(**db_config_cims)
+        conn2 = mysql.connector.connect(**db_config_g1)
 
         cursor = conn.cursor()
+        cursor2 = conn2.cursor()
 
         # 1. Insert into members
         insert_member = """
@@ -67,6 +76,14 @@ def add_member():
         """
         cursor.execute(insert_member, (username, email, dob))
         conn.commit()
+
+        insert_member_ext = """
+            INSERT INTO memberExt (Name, Email, Password, Contact_No, Age, Role) VALUES
+            (%s, %s, %s, %s, %s, %s)
+        """
+
+        cursor2.execute(insert_member_ext, (username, email, password, contact_no, age, role))
+        conn2.commit()
 
         # 2. Get the new member's ID
         member_id = cursor.lastrowid
@@ -95,8 +112,63 @@ def add_member():
             cursor.close()
         if 'conn' in locals():
             conn.close()
+        if 'cursor2' in locals():
+            cursor2.close()
+        if 'conn2' in locals():
+            conn2.close()
 
 
+@app.route('/addAdmin', methods=['POST'])
+def add_admin():
+    data = request.get_json()
+    username = data.get('username')
+    email = data.get('email')
+    dob = data.get('dob')
+    password = data.get('password')
+
+    if not username or not email or not dob:
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    try:
+        conn = mysql.connector.connect(**db_config_cims)
+        cursor = conn.cursor()
+
+        # 1. Insert into members
+        insert_member = """
+            INSERT INTO members (UserName, emailID, DoB)
+            VALUES (%s, %s, %s)
+        """
+        cursor.execute(insert_member, (username, email, dob))
+        conn.commit()
+
+        # 2. Get the new member's ID
+        member_id = cursor.lastrowid
+
+        # 3. Insert into Login with default password
+        insert_login = """
+            INSERT INTO Login (MemberID, Password, Role)
+            VALUES (%s, %s, %s)
+        """
+        default_password = hashlib.md5(data.get('password', '').encode()).hexdigest()  # You can hash this later
+        cursor.execute(insert_login, (member_id, default_password, 'admin'))
+        conn.commit()
+
+        return jsonify({
+            'message': 'Admin and login created successfully',
+            'member_id': member_id
+        }), 201
+
+    except mysql.connector.Error as err:
+        print("Database error:", err)
+        return jsonify({'error': str(err)}), 500
+
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+
+# login endpoint: checks the credentials of the user and returns a token
 @app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -154,6 +226,10 @@ def login():
             cursor.close()
         if 'conn' in locals():
             conn.close()
+
+
+
+
 
 
 # Test route

@@ -2,7 +2,7 @@ drop database if exists CampusTrade;
 CREATE DATABASE CampusTrade;
 USE CampusTrade;
 
-CREATE TABLE member (
+CREATE TABLE memberExt (
     Member_ID INT PRIMARY KEY AUTO_INCREMENT,
     Name VARCHAR(100) NOT NULL,
     Email VARCHAR(255) NOT NULL UNIQUE,
@@ -31,7 +31,7 @@ CREATE TABLE product_listing (
     Condition_ ENUM('New', 'Used') NOT NULL,
     Image_URL VARCHAR(255) DEFAULT NULL,
     Listed_On TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (Seller_ID) REFERENCES member(Member_ID),
+    FOREIGN KEY (Seller_ID) REFERENCES memberExt(Member_ID),
     FOREIGN KEY (Category_ID) REFERENCES category(Category_ID)
 );
 
@@ -43,8 +43,8 @@ CREATE TABLE transaction_listing (
     Product_ID INT NOT NULL,
     Payment_Method ENUM('Cash', 'Credit') NOT NULL,
     Transaction_Date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (Buyer_ID) REFERENCES member(Member_ID),
-    FOREIGN KEY (Seller_ID) REFERENCES member(Member_ID),
+    FOREIGN KEY (Buyer_ID) REFERENCES memberExt(Member_ID),
+    FOREIGN KEY (Seller_ID) REFERENCES memberExt(Member_ID),
     FOREIGN KEY (Product_ID) REFERENCES product_listing(Product_ID)
 );
 
@@ -52,7 +52,7 @@ CREATE TABLE credit_logs (
     Credit_ID INT PRIMARY KEY AUTO_INCREMENT,
     Member_ID INT NOT NULL,
     Balance DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-    FOREIGN KEY (Member_ID) REFERENCES member(Member_ID)
+    FOREIGN KEY (Member_ID) REFERENCES memberExt(Member_ID)
 );
 
 
@@ -61,7 +61,7 @@ CREATE TABLE wishlist (
     Member_ID INT NOT NULL,
     Product_ID INT NOT NULL,
     Added_On TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (Member_ID) REFERENCES member(Member_ID),
+    FOREIGN KEY (Member_ID) REFERENCES memberExt(Member_ID),
     FOREIGN KEY (Product_ID) REFERENCES product_listing(Product_ID)
 );
 
@@ -73,8 +73,8 @@ CREATE TABLE reviews_ratings (
     Rating INT CHECK (Rating BETWEEN 1 AND 5),
     Review_Text TEXT,
     Timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (Reviewer_ID) REFERENCES member(Member_ID),
-    FOREIGN KEY (Reviewed_User_ID) REFERENCES member(Member_ID)
+    FOREIGN KEY (Reviewer_ID) REFERENCES memberExt(Member_ID),
+    FOREIGN KEY (Reviewed_User_ID) REFERENCES memberExt(Member_ID)
 );
 
 
@@ -91,7 +91,7 @@ CREATE TABLE complaints (
     Description TEXT NOT NULL,
     Status ENUM('Open', 'Resolved') DEFAULT 'Open',
     Filed_On TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (Member_ID) REFERENCES member(Member_ID)
+    FOREIGN KEY (Member_ID) REFERENCES memberExt(Member_ID)
 );
 
 
@@ -100,11 +100,11 @@ CREATE TABLE searches (
     Member_ID INT NOT NULL,
     Query VARCHAR(255) NOT NULL,
     Searched_On TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (Member_ID) REFERENCES member(Member_ID)
+    FOREIGN KEY (Member_ID) REFERENCES memberExt(Member_ID)
 );
 
 -- Insert members
-INSERT INTO member (Name, Email, Password, Contact_No, Age, Profile_Image, Role) VALUES
+INSERT INTO memberExt (Name, Email, Password, Contact_No, Age, Profile_Image, Role) VALUES
 ('Alice Johnson', 'alice@example.com', 'hashedpassword1', '9876543210', 22, load_file('/var/lib/mysql-files/Screenshot from 2025-02-28 19-31-16.png'), 'Student'),
 ('Bob Smith', 'bob@example.com', 'hashedpassword2', '9876543211', 35, load_file('/var/lib/mysql-files/Screenshot from 2025-02-28 19-31-32.png'), 'Faculty'),
 ('Charlie Brown', 'charlie@example.com', 'hashedpassword3', '9876543212', 28, load_file('/var/lib/mysql-files/Screenshot from 2025-02-28 19-31-42.png'), 'Staff'),
@@ -282,15 +282,15 @@ INSERT INTO searches (Member_ID, Query) VALUES
 SELECT p.Product_ID, p.Title, p.Description, p.Price, p.Condition_, c.Category_Name, m.Name AS Seller
 FROM product_listing p
 JOIN category c ON p.Category_ID = c.Category_ID
-JOIN member m ON p.Seller_ID = m.Member_ID;
+JOIN memberExt m ON p.Seller_ID = m.Member_ID;
 
 SELECT t.Transaction_ID, b.Name AS Buyer, s.Name AS Seller, p.Title AS Product, t.Payment_Method, t.Transaction_Date
 FROM transaction_listing t
-JOIN member b ON t.Buyer_ID = b.Member_ID
-JOIN member s ON t.Seller_ID = s.Member_ID
+JOIN memberExt b ON t.Buyer_ID = b.Member_ID
+JOIN memberExt s ON t.Seller_ID = s.Member_ID
 JOIN product_listing p ON t.Product_ID = p.Product_ID;
 SHOW VARIABLES LIKE 'secure_file_priv';
 SHOW GRANTS FOR CURRENT_USER;
 SET GLOBAL local_infile = 1;
 SELECT * from report_analytics;
-select * from member;
+select * from memberExt;
