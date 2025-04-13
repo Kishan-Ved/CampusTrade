@@ -113,8 +113,6 @@ def login():
         # Hash the password
         hashed_password = hashlib.md5(password.encode()).hexdigest()
 
-        # Check credentials
-
         # Fetch MemberID from members table using the username
         cursor.execute("SELECT ID FROM members WHERE UserName = %s", (username,))
         member = cursor.fetchone()
@@ -129,10 +127,19 @@ def login():
         user = cursor.fetchone()
 
         if user:
+            # Generate token
             token = jwt.encode({
                 'user_id': str(user['MemberID']),
-                # 'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
             }, app.config['SECRET_KEY'], algorithm='HS256')
+
+            # Update session and expiry in the Login table
+            session_expiry = (datetime.datetime.utcnow() + datetime.timedelta(hours=1)).timestamp()
+            cursor.execute(
+                "UPDATE Login SET Session = %s, Expiry = %s WHERE MemberID = %s",
+                (token, session_expiry, member_id)
+            )
+            conn.commit()
 
             return jsonify({'token': token}), 200
         else:
@@ -147,6 +154,7 @@ def login():
             cursor.close()
         if 'conn' in locals():
             conn.close()
+
 
 # Test route
 @app.route('/', methods=['GET'])
