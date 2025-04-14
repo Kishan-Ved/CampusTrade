@@ -570,6 +570,114 @@ def add_to_wishlist():
         cursor.close()
         conn.close()
 
+@app.route('/buyProduct', methods=['POST'])
+def buy_product():
+    try:
+        token = request.headers.get('Authorization')  # Bearer <token>
+        if not token or not token.startswith('Bearer '):
+            return jsonify({'error': 'Authorization token missing or malformed'}), 401
+
+        token = token.split(' ')[1]
+
+        decoded = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+        member_id = decoded['user_id']
+
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Validate session and role for the admin (not the member being deleted)
+        cursor.execute("SELECT Role, Session FROM Login WHERE MemberID = %s", (member_id,))
+        login_info = cursor.fetchone()
+
+        print("login_info", login_info["Session"])
+        print("token", token)
+
+        if not login_info or login_info['Session'] != token:
+            return jsonify({'error': 'Unauthorized'}), 403
+        print("Authorized")
+
+        conn2 = get_db_connection(cims=False)
+        cursor2 = conn2.cursor(dictionary=True)
+
+        # Implement this
+        # Get Product_ID from request body
+        data = request.get_json()
+        product_id = data.get('Product_ID')
+        payment_mode = data.get('payment_mode')
+        if not payment_mode:
+            return jsonify({'error': 'Payment mode is required'}), 400
+
+        if not product_id:
+            return jsonify({'error': 'Product_ID is required'}), 400
+        
+        # Get Seller_ID and price from product_listing table
+        cursor2.execute("SELECT Seller_ID, Price, Title FROM product_listing WHERE Product_ID = %s", (product_id,))
+        product_details = cursor2.fetchone()
+
+        if not product_details:
+            return jsonify({'error': 'Product not found'}), 404
+
+        seller_id = product_details['Seller_ID']
+        price = product_details['Price']
+        title = product_details['Title']
+
+        # Delete the product from product_listing table
+        cursor2.execute("DELETE FROM product_listing WHERE Product_ID = %s", (product_id,))
+        conn2.commit()
+
+        if payment_mode == 'Credit':
+            # Check if buyer_id exists in credit_logs
+            cursor2.execute("SELECT balance FROM credit_logs WHERE member_id = %s", (member_id,))
+            buyer_credit = cursor2.fetchone()
+
+            if buyer_credit:
+                # Update buyer's balance
+                new_balance = buyer_credit['balance'] + price
+                cursor2.execute("UPDATE credit_logs SET balance = %s WHERE member_id = %s", (new_balance, member_id))
+            else:
+                # Insert new record for buyer with initial balance
+                cursor2.execute("INSERT INTO credit_logs (member_id, balance) VALUES (%s, %s)", (member_id, price))
+
+            # Check if seller_id exists in credit_logs
+            cursor2.execute("SELECT balance FROM credit_logs WHERE member_id = %s", (seller_id,))
+            seller_credit = cursor2.fetchone()
+
+            if seller_credit:
+                # Decrease seller's balance
+                new_balance = seller_credit['balance'] - price
+                cursor2.execute("UPDATE credit_logs SET balance = %s WHERE member_id = %s", (new_balance, seller_id))
+            else:
+                # Insert new record for seller with negative balance
+                cursor2.execute("INSERT INTO credit_logs (member_id, balance) VALUES (%s, %s)", (seller_id, -price))
+
+            conn2.commit()
+
+        # Insert transaction details into transactions table
+        transaction_query = """
+            INSERT INTO transaction_listing (Buyer_ID, Seller_ID, Title, Price, Payment_Method)
+            VALUES (%s, %s, %s, %s, %s)
+        """
+        cursor2.execute(transaction_query, (member_id, seller_id, title, price, payment_mode))
+        conn2.commit()
+
+        # Delete from wishlist if it exists
+        cursor2.execute("DELETE FROM wishlist WHERE Member_ID = %s AND Product_ID = %s", (member_id, product_id))
+        conn2.commit()
+        
+        return jsonify({'success': True, 'message': 'Product purchased and removed successfully'}), 200
+    
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+        if 'cursor2' in locals():
+            cursor2.close()
+        if 'conn2' in locals():
+            conn2.close()
 
 # Test route
 @app.route('/', methods=['GET'])
