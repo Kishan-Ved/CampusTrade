@@ -81,6 +81,7 @@ def add_member():
         """
         cursor.execute(insert_member, (username, email, dob))
         conn.commit()
+
         insert_member_ext = """
             INSERT INTO memberExt (Name, Email, Password, Contact_No, Age, Role) VALUES
             (%s, %s, %s, %s, %s, %s)
@@ -91,6 +92,13 @@ def add_member():
 
         # 2. Get the new member's ID
         member_id = cursor.lastrowid
+
+        insert_mapping = """
+            INSERT INTO MemberGroupMapping (MemberId, GroupId)
+            VALUES (%s, %s)
+        """
+        cursor.execute(insert_mapping, (member_id, 1))
+        conn.commit()
 
         # 3. Insert into Login with default password
         insert_login = """
