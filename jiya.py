@@ -81,17 +81,17 @@ def add_member():
         """
         cursor.execute(insert_member, (username, email, dob))
         conn.commit()
-
-        insert_member_ext = """
-            INSERT INTO memberExt (Name, Email, Password, Contact_No, Age, Role) VALUES
-            (%s, %s, %s, %s, %s, %s)
-        """
-
-        cursor2.execute(insert_member_ext, (username, email, password, contact_no, age, role))
-        conn2.commit()
-
+        
         # 2. Get the new member's ID
         member_id = cursor.lastrowid
+
+        insert_member_ext = """
+            INSERT INTO memberExt (Name, Member_ID, Email, Password, Contact_No, Age, Role) VALUES
+            (%s, %s, %s, %s, %s, %s, %s)
+        """
+
+        cursor2.execute(insert_member_ext, (username, member_id, email, password, contact_no, age, role))
+        conn2.commit()
 
         insert_mapping = """
             INSERT INTO MemberGroupMapping (MemberId, GroupId)
