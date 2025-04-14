@@ -49,6 +49,46 @@ const ProductListing = () => {
     }
   };
 
+  const BuyProductOnCredit = async (productId) => {
+    try {
+      const res = await axios.post(
+        'http://127.0.0.1:5001/buyProduct',
+        { "Product_ID" : productId, "payment_mode": "Credit" },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (res.data.success) {
+        alert('Product purchased!');
+      } else {
+        alert('Failed to purchase the product');
+      }
+    } catch (err) {
+      console.error("Error in buying the product:", err);
+      alert('An error occurred. Please try again.');
+    }
+  };
+
+  const BuyProductWithCash = async (productId) => {
+    try {
+      const res = await axios.post(
+        'http://127.0.0.1:5001/buyProduct',
+        { "Product_ID" : productId, "payment_mode": "Cash" },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (res.data.success) {
+        alert('Product purchased!');
+      } else {
+        alert('Failed to purchase the product');
+      }
+    } catch (err) {
+      console.error("Error in buying the product:", err);
+      alert('An error occurred. Please try again.');
+    }
+  };
+
   return (
     <div style={{ padding: '2rem' }}>
       <h2>Available Products</h2>
@@ -75,6 +115,14 @@ const ProductListing = () => {
               <div>
                 <button onClick={() => handleAddToWishlist(product.Product_ID)}>
                   Add to Wishlist
+                </button>
+
+                <button onClick={() => BuyProductOnCredit(product.Product_ID)}>
+                  Buy on Credit
+                </button>
+
+                <button onClick={() => BuyProductWithCash(product.Product_ID)}>
+                  Buy with Cash
                 </button>
               </div>
             </li>
