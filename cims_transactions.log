@@ -1,0 +1,41 @@
+2025-04-14 18:43:05,405 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://10.7.7.74:5001
+2025-04-14 18:43:05,405 [INFO] [33mPress CTRL+C to quit[0m
+2025-04-14 18:43:05,405 [INFO]  * Restarting with stat
+2025-04-14 18:43:05,541 [WARNING]  * Debugger is active!
+2025-04-14 18:43:05,548 [INFO]  * Debugger PIN: 141-255-606
+2025-04-14 18:44:05,977 [INFO] 127.0.0.1 - - [14/Apr/2025 18:44:05] "OPTIONS /verifyToken HTTP/1.1" 200 -
+2025-04-14 18:44:05,977 [INFO] 127.0.0.1 - - [14/Apr/2025 18:44:05] "OPTIONS /verifyToken HTTP/1.1" 200 -
+2025-04-14 18:44:15,647 [INFO] 127.0.0.1 - - [14/Apr/2025 18:44:15] "OPTIONS /login HTTP/1.1" 200 -
+2025-04-14 18:44:23,815 [INFO] 127.0.0.1 - - [14/Apr/2025 18:44:23] "OPTIONS /login HTTP/1.1" 200 -
+2025-04-14 18:45:09,339 [INFO] 127.0.0.1 - - [14/Apr/2025 18:45:09] "OPTIONS /login HTTP/1.1" 200 -
+2025-04-14 18:45:34,068 [INFO] 127.0.0.1 - - [14/Apr/2025 18:45:34] "OPTIONS /login HTTP/1.1" 200 -
+2025-04-14 18:46:35,919 [INFO] 127.0.0.1 - - [14/Apr/2025 18:46:35] "OPTIONS /addMember HTTP/1.1" 200 -
+2025-04-14 18:47:01,888 [INFO]  * Detected change in '/Users/nimitt/Documents/CampusTrade/backend/api.py', reloading
+2025-04-14 18:47:01,921 [INFO]  * Restarting with stat
+2025-04-14 18:47:02,142 [WARNING]  * Debugger is active!
+2025-04-14 18:47:02,147 [INFO]  * Debugger PIN: 141-255-606
+2025-04-14 18:47:22,198 [INFO]  * Detected change in '/Users/nimitt/Documents/CampusTrade/backend/api.py', reloading
+2025-04-14 18:47:22,229 [INFO]  * Restarting with stat
+2025-04-14 18:47:22,367 [WARNING]  * Debugger is active!
+2025-04-14 18:47:22,371 [INFO]  * Debugger PIN: 141-255-606
+2025-04-14 18:47:32,034 [INFO] 127.0.0.1 - - [14/Apr/2025 18:47:32] "OPTIONS /addMember HTTP/1.1" 200 -
+2025-04-14 18:47:32,319 [INFO] Action: AddMember | Description: New member added with name: nimitt4
+2025-04-14 18:47:32,394 [INFO] 127.0.0.1 - - [14/Apr/2025 18:47:32] "[35m[1mPOST /addMember HTTP/1.1[0m" 201 -
+2025-04-14 18:47:47,520 [INFO] 127.0.0.1 - - [14/Apr/2025 18:47:47] "OPTIONS /login HTTP/1.1" 200 -
+2025-04-14 18:47:47,609 [INFO] 127.0.0.1 - - [14/Apr/2025 18:47:47] "POST /login HTTP/1.1" 200 -
+2025-04-14 18:48:02,601 [INFO] 127.0.0.1 - - [14/Apr/2025 18:48:02] "OPTIONS /login HTTP/1.1" 200 -
+2025-04-14 18:48:02,701 [INFO] 127.0.0.1 - - [14/Apr/2025 18:48:02] "POST /login HTTP/1.1" 200 -
+2025-04-14 18:55:08,988 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://10.7.7.74:5001
+2025-04-14 18:55:08,988 [INFO] [33mPress CTRL+C to quit[0m
+2025-04-14 18:55:08,989 [INFO]  * Restarting with stat
+2025-04-14 18:55:09,123 [WARNING]  * Debugger is active!
+2025-04-14 18:55:09,129 [INFO]  * Debugger PIN: 141-255-606
+2025-04-14 18:55:18,288 [INFO] 127.0.0.1 - - [14/Apr/2025 18:55:18] "OPTIONS /login HTTP/1.1" 200 -
+2025-04-14 18:55:18,431 [INFO] Action: Login | Description: Login of name: nimitt4
+2025-04-14 18:55:18,512 [INFO] 127.0.0.1 - - [14/Apr/2025 18:55:18] "POST /login HTTP/1.1" 200 -
