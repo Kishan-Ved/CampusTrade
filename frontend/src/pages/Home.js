@@ -12,7 +12,7 @@ const Home = () => {
         <Link to="/products">View Products</Link> |{" "}
         <Link to="/add-product">Add Product</Link> |{" "}
         <Link to="/wishlist">Wishlist</Link> |{" "}
-        <Link to="/transactions">Transactions</Link> |{" "}
+        <Link to="/getMytransactions">Transactions</Link> |{" "}
         <Link to="/reviews">Reviews</Link> |{" "}
         <Link to="/complaints">Complaints</Link> |{" "}
         <Link to="/report">Reports</Link> |{" "}

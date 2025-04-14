@@ -679,6 +679,214 @@ def buy_product():
         if 'conn2' in locals():
             conn2.close()
 
+
+# Get My Transactions endpoint
+@app.route('/getMyTransactions', methods=['GET'])
+def get_my_transactions():
+    try:
+        # Extract and validate token
+        token = request.headers.get('Authorization')
+        if not token or not token.startswith('Bearer '):
+            return jsonify({'error': 'Authorization token missing or malformed'}), 401
+
+        token = token.split(' ')[1]
+        
+        # Decode token to get user ID
+        decoded = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+        member_id = decoded['user_id']
+        
+        # Verify session in Login table
+        conn_cims = get_db_connection()
+        cursor_cims = conn_cims.cursor(dictionary=True)
+        cursor_cims.execute("SELECT Session FROM Login WHERE MemberID = %s", (member_id,))
+        login_info = cursor_cims.fetchone()
+        
+        if not login_info or login_info['Session'] != token:
+            return jsonify({'error': 'Unauthorized'}), 403
+            
+        # Get transactions
+        conn = get_db_connection(cims=False)
+        cursor = conn.cursor(dictionary=True)
+        
+        query = """
+            SELECT 
+                Transaction_ID, 
+                Buyer_ID, 
+                Seller_ID, 
+                Title, 
+                Price, 
+                Payment_Method, 
+                Transaction_Date 
+            FROM transaction_listing
+            WHERE Buyer_ID = %s OR Seller_ID = %s
+            ORDER BY Transaction_Date DESC
+        """
+        cursor.execute(query, (member_id, member_id))
+        transactions = cursor.fetchall()
+        
+        # Convert datetime objects to string to make them JSON serializable
+        for transaction in transactions:
+            if 'Transaction_Date' in transaction and transaction['Transaction_Date']:
+                transaction['Transaction_Date'] = transaction['Transaction_Date'].isoformat()
+        
+        return jsonify({
+            'success': True,
+            'transactions': transactions,
+            'count': len(transactions)
+        }), 200
+        
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Token expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+    except mysql.connector.Error as err:
+        print(f"Database error: {err}")
+        return jsonify({'success': False, 'error': str(err)}), 500
+    finally:
+        if 'cursor_cims' in locals():
+            cursor_cims.close()
+        if 'conn_cims' in locals():
+            conn_cims.close()
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+
+
+# post review endpoint
+@app.route('/addReview', methods=['POST'])
+def add_review():
+    try:
+        # Extract and validate token
+        token = request.headers.get('Authorization')
+        if not token or not token.startswith('Bearer '):
+            return jsonify({'error': 'Authorization token missing or malformed'}), 401
+
+        token = token.split(' ')[1]
+        
+        # Decode token to get user ID
+        decoded = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+        member_id = decoded['user_id']
+        
+        # Verify session in Login table
+        conn_cims = get_db_connection()
+        cursor_cims = conn_cims.cursor(dictionary=True)
+        cursor_cims.execute("SELECT Session FROM Login WHERE MemberID = %s", (member_id,))
+        login_info = cursor_cims.fetchone()
+        
+        if not login_info or login_info['Session'] != token:
+            return jsonify({'error': 'Unauthorized'}), 403
+
+        # Get review data from request body
+        data = request.get_json()
+        reviewed_user_id = data.get('Reviewed_User_ID')
+        rating = data.get('Rating')
+        review_text = data.get('Review_Text')
+
+        if not reviewed_user_id or not rating:
+            return jsonify({'error': 'Missing required fields'}), 400
+        
+        # Insert review
+        conn = get_db_connection(cims=False)
+        cursor = conn.cursor()
+        insert_query = """
+            INSERT INTO reviews_ratings (Reviewer_ID, Reviewed_User_ID, Rating, Review_Text, Timestamp)
+            VALUES (%s, %s, %s, %s, NOW())
+        """
+        cursor.execute(insert_query, (member_id, reviewed_user_id, rating, review_text))
+        conn.commit()
+
+        return jsonify({'success': True, 'message': 'Review submitted successfully'}), 201
+
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Token expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+    except mysql.connector.Error as err:
+        print(f"Database error: {err}")
+        return jsonify({'success': False, 'error': str(err)}), 500
+    finally:
+        if 'cursor_cims' in locals():
+            cursor_cims.close()
+        if 'conn_cims' in locals():
+            conn_cims.close()
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+
+
+# Get My Reviews endpoint
+@app.route('/getMyReviews', methods=['GET'])
+def get_my_reviews():
+    try:
+        # Extract and validate token
+        token = request.headers.get('Authorization')
+        if not token or not token.startswith('Bearer '):
+            return jsonify({'error': 'Authorization token missing or malformed'}), 401
+
+        token = token.split(' ')[1]
+
+        # Decode token to get user ID
+        decoded = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+        member_id = decoded['user_id']
+
+        # Verify session in Login table
+        conn_cims = get_db_connection()
+        cursor_cims = conn_cims.cursor(dictionary=True)
+        cursor_cims.execute("SELECT Session FROM Login WHERE MemberID = %s", (member_id,))
+        login_info = cursor_cims.fetchone()
+
+        if not login_info or login_info['Session'] != token:
+            return jsonify({'error': 'Unauthorized'}), 403
+
+        # Fetch reviews from reviews_ratings
+        conn = get_db_connection(cims=False)
+        cursor = conn.cursor(dictionary=True)
+        query = """
+            SELECT 
+                Review_ID,
+                Reviewer_ID,
+                Reviewed_User_ID,
+                Rating,
+                Review_Text,
+                Timestamp
+            FROM reviews_ratings
+            WHERE Reviewer_ID = %s OR Reviewed_User_ID = %s
+            ORDER BY Timestamp DESC
+        """
+        cursor.execute(query, (member_id, member_id))
+        reviews = cursor.fetchall()
+
+        # Convert timestamp to string
+        for review in reviews:
+            if 'Timestamp' in review and review['Timestamp']:
+                review['Timestamp'] = review['Timestamp'].isoformat()
+
+        return jsonify({
+            'success': True,
+            'reviews': reviews,
+            'count': len(reviews)
+        }), 200
+
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Token expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+    except mysql.connector.Error as err:
+        print(f"Database error: {err}")
+        return jsonify({'success': False, 'error': str(err)}), 500
+    finally:
+        if 'cursor_cims' in locals():
+            cursor_cims.close()
+        if 'conn_cims' in locals():
+            conn_cims.close()
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+
+
 # Test route
 @app.route('/', methods=['GET'])
 def hello():
@@ -687,5 +895,9 @@ def hello():
 if __name__ == '__main__':
     # conn = mysql.connector.connect(**db_config)
     # print("connected to DB")
+    print("Available routes:")
+    for rule in app.url_map.iter_rules():
+        print(f"{rule.endpoint}: {rule}")
+
     print(app.url_map)
     app.run(host='0.0.0.0', port=5001, debug=True)
