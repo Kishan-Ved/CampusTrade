@@ -18,6 +18,11 @@ import psycopg2
 import requests
 # import UpdateImage
 
+# import logging
+
+# Set up logging configuration
+# logging.basicConfig(level=logging.DEBUG)
+
 app = Flask(__name__)
 
 # Configure DB connection
@@ -76,7 +81,6 @@ def add_member():
         """
         cursor.execute(insert_member, (username, email, dob))
         conn.commit()
-
         insert_member_ext = """
             INSERT INTO memberExt (Name, Email, Password, Contact_No, Age, Role) VALUES
             (%s, %s, %s, %s, %s, %s)
@@ -227,8 +231,79 @@ def login():
         if 'conn' in locals():
             conn.close()
 
+@app.route('/deleteMember', methods=['DELETE'])
+def delete_member():
+    print("here")
+    token = request.headers.get('Authorization')  # Bearer <token>
+    if not token or not token.startswith('Bearer '):
+        return jsonify({'error': 'Authorization token missing or malformed'}), 401
 
+    token = token.split(' ')[1]
 
+    try:
+        decoded = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+        admin_id = decoded['user_id']  # This is the admin's ID, not the member to be deleted
+
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Validate session and role for the admin (not the member being deleted)
+        cursor.execute("SELECT Role, Session FROM Login WHERE MemberID = %s", (admin_id,))
+        login_info = cursor.fetchone()
+
+        print("login_info", login_info["Session"])
+        print("token", token)
+
+        if not login_info or login_info['Session'] != token or login_info['Role'] != 'admin':
+            return jsonify({'error': 'Unauthorized'}), 403
+
+        data = request.get_json()
+        member_to_delete = data.get('member_id')
+
+        if not member_to_delete:
+            return jsonify({'error': 'member_id is required'}), 400
+        
+        # Fetch email of the member to delete
+        cursor.execute("SELECT emailID FROM members WHERE ID = %s", (member_to_delete,))
+        user_row = cursor.fetchone()
+
+        if not user_row:
+            return jsonify({'error': 'Member not found'}), 404
+
+        email_to_delete = user_row['emailID']
+
+        # Delete from memberExt using email
+        conn2 = get_db_connection(cims=False)
+        cursor2 = conn2.cursor()
+        cursor2.execute("DELETE FROM memberExt WHERE Email = %s", (email_to_delete,))
+        conn2.commit()
+
+        # Delete from Login table
+        cursor.execute("DELETE FROM Login WHERE MemberID = %s", (member_to_delete,))
+        conn.commit()
+
+        # Delete from members table
+        cursor.execute("DELETE FROM members WHERE ID = %s", (member_to_delete,))
+        conn.commit()
+
+        return jsonify({'message': 'Member deleted successfully'}), 200
+
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Token expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+    except mysql.connector.Error as err:
+        print("Database error:", err)
+        return jsonify({'error': str(err)}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+        if 'cursor2' in locals():
+            cursor2.close()
+        if 'conn2' in locals():
+            conn2.close()
 
 
 
@@ -240,4 +315,5 @@ def hello():
 if __name__ == '__main__':
     # conn = mysql.connector.connect(**db_config)
     # print("connected to DB")
-    app.run(host='0.0.0.0', port=5000)
+    print(app.url_map)
+    app.run(host='0.0.0.0', port=5000, debug=True)
