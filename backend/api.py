@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import mysql.connector
 import hashlib
+from functools import wraps
 # import Login
 import logging
 
@@ -19,11 +20,13 @@ import requests
 # import UpdateImage
 
 # import logging
+from flask_cors import CORS
 
 # Set up logging configuration
 # logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
+CORS(app)
 
 # Configure DB connection
 db_config_g1 = {
@@ -107,7 +110,8 @@ def add_member():
         """
         default_password = hashlib.md5(data.get('password', '').encode()).hexdigest()  # You can hash this later
         # default_password = data.get('password', '')  # You can hash this later
-        cursor.execute(insert_login, (member_id, default_password, 'member'))
+        hashed_password = hashlib.md5(password.encode()).hexdigest()
+        cursor.execute(insert_login, (member_id, hashed_password, 'member'))
         conn.commit()
 
         return jsonify({
@@ -186,10 +190,9 @@ def login():
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
-
+    print(username, password)
     if not username or not password:
         return jsonify({'error': 'Missing required fields'}), 400
-
     try:
         conn = mysql.connector.connect(**db_config_cims)
         cursor = conn.cursor(dictionary=True)
@@ -200,7 +203,7 @@ def login():
         # Fetch MemberID from members table using the username
         cursor.execute("SELECT ID FROM members WHERE UserName = %s", (username,))
         member = cursor.fetchone()
-
+        
         if not member:
             return jsonify({'error': 'User not found'}), 404
 
@@ -209,9 +212,7 @@ def login():
         # Check credentials in Login table
         cursor.execute("SELECT * FROM Login WHERE MemberID = %s AND Password = %s", (member_id, hashed_password))
         user = cursor.fetchone()
-
         if user:
-            # Generate token
             token = jwt.encode({
                 'user_id': str(user['MemberID']),
                 'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
@@ -238,6 +239,69 @@ def login():
             cursor.close()
         if 'conn' in locals():
             conn.close()
+
+
+# --- Middleware to extract and verify JWT ---
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+
+        # Get token from Authorization header
+        if 'Authorization' in request.headers:
+            auth_header = request.headers['Authorization']
+            if auth_header.startswith('Bearer '):
+                token = auth_header.split(' ')[1]
+
+        if not token:
+            return jsonify({'success': False, 'message': 'Token is missing'}), 401
+
+        try:
+            data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
+            request.user_id = data['user_id']
+        except jwt.ExpiredSignatureError:
+            return jsonify({'success': False, 'message': 'Token expired'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'success': False, 'message': 'Invalid token'}), 401
+
+        return f(*args, **kwargs)
+    return decorated
+
+# --- Protected route ---
+@app.route('/verifyToken', methods=['GET'])
+@token_required
+def verify_token():
+    return jsonify({
+        'success': True,
+        'user': {
+            'id': request.user_id
+        }
+    }), 200
+
+@app.route('/getWishlist', methods=['GET'])
+@token_required  # Protect the route with the token_required decorator
+def get_wishlist(user_id):
+    try:
+        conn = mysql.connector.connect(**db_config_g1)
+        cursor = conn.cursor()
+
+        # Query the wishlist for the authenticated user
+        cursor.execute("SELECT * FROM Wishlist WHERE user_id = %s", (user_id,))
+        wishlist_items = cursor.fetchall()
+
+        if not wishlist_items:
+            return jsonify({'message': 'No items found in wishlist'}), 404
+
+        return jsonify({'wishlist': wishlist_items}), 200
+
+    except mysql.connector.Error as err:
+        print(f"Database error: {err}")
+        return jsonify({'error': str(err)}), 500
+
+    finally:
+        cursor.close()
+        conn.close()
+
 
 @app.route('/deleteMember', methods=['DELETE'])
 def delete_member():
@@ -320,6 +384,165 @@ def delete_member():
             conn2.close()
 
 
+@app.route('/addProduct', methods=['POST'])
+def add_product():
+   
+    print(request)
+    data = request.get_json()
+    print("jang")
+    print(data)
+
+    required_fields = ['seller_id', 'title', 'description', 'price', 'category_id', 'condition']
+    for field in required_fields:
+        if field not in data:
+            return jsonify({'error': f'Missing required field: {field}'}), 400
+
+
+    seller_id = data['seller_id']
+    title = data['title']
+    description = data['description']
+    price = data['price']
+    category_id = data['category_id']
+    condition = data['condition']
+    image_url = data['image_url']
+
+    try:
+        conn = get_db_connection(cims=False)
+        cursor = conn.cursor()
+
+        query = """
+            INSERT INTO product_listing (Seller_ID, Title, Description, Price, Category_ID, Condition_, Image_URL)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """
+        cursor.execute(query, (seller_id, title, description, price, category_id, condition, image_url))
+        
+        conn.commit()
+
+        return jsonify({'message': 'Product listed successfully'}), 201
+
+    except Exception as e:
+
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        cursor.close()
+        conn.close()
+
+
+
+@app.route('/getCategories', methods=['GET'])
+def get_categories():
+    try:
+        conn = get_db_connection(cims=False)
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM category") 
+        categories = cursor.fetchall()
+        print(categories)
+        return jsonify({'categories': categories}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+
+# Get All Products endpoint
+@app.route('/getProducts', methods=['GET'])
+def get_products():
+    try:
+        conn = get_db_connection(cims=False)
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM product_listing")
+        products = cursor.fetchall()
+
+        return jsonify({'products': products}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+# Get Product by ID endpoint
+@app.route('/getProduct/<int:product_id>', methods=['GET'])
+def get_product(product_id):
+    try:
+        conn = get_db_connection(cims=False)
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute("SELECT * FROM product_listing WHERE Product_ID = %s", (product_id,))
+        product = cursor.fetchone()
+
+        if product:
+            return jsonify({'product': product}), 200
+        else:
+            return jsonify({'error': 'Product not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+# Update Product endpoint
+@app.route('/updateProduct/<int:product_id>', methods=['PUT'])
+def update_product(product_id):
+    data = request.get_json()
+    try:
+        conn = get_db_connection(cims=False)
+        cursor = conn.cursor()
+
+        # Update product in the product_listing table
+        query = """
+            UPDATE product_listing
+            SET Seller_ID = %s, Title = %s, Description = %s, Price = %s, Category_ID = %s, Condition_ = %s, Image_URL = %s
+            WHERE Product_ID = %s
+        """
+        cursor.execute(query, (
+            data['seller_id'], data['title'], data['description'], data['price'],
+            data['category_id'], data['condition'], data.get('image_url'), product_id
+        ))
+        conn.commit()
+
+        return jsonify({'message': 'Product updated successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+# Delete Product endpoint
+@app.route('/deleteProduct/<int:product_id>', methods=['DELETE'])
+def delete_product(product_id):
+    try:
+        conn = get_db_connection(cims=False)
+        cursor = conn.cursor()
+
+        # Delete product from the product_listing table
+        cursor.execute("DELETE FROM product_listing WHERE Product_ID = %s", (product_id,))
+        conn.commit()
+
+        return jsonify({'message': 'Product deleted successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/addToWishlist', methods=['POST'])
+def add_to_wishlist():
+    data = request.get_json()
+    try:
+        conn = get_db_connection(cims=False)
+        cursor = conn.cursor()
+        query = "INSERT INTO wishlist (Member_ID, Product_ID) VALUES (%s, %s)"
+        cursor.execute(query, (data['member_id'], data['product_id']))
+        conn.commit()
+        return jsonify({'message': 'Added to wishlist'}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
 
 # Test route
 @app.route('/', methods=['GET'])
@@ -330,4 +553,4 @@ if __name__ == '__main__':
     # conn = mysql.connector.connect(**db_config)
     # print("connected to DB")
     print(app.url_map)
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5001, debug=True)
