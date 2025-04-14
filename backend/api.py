@@ -448,17 +448,46 @@ def get_categories():
 @app.route('/getProducts', methods=['GET'])
 def get_products():
     try:
-        conn = get_db_connection(cims=False)
+        token = request.headers.get('Authorization')  # Bearer <token>
+        if not token or not token.startswith('Bearer '):
+            return jsonify({'error': 'Authorization token missing or malformed'}), 401
+
+        token = token.split(' ')[1]
+
+        decoded = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+        member_id = decoded['user_id']  # This is the admin's ID, not the member to be deleted
+
+        conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM product_listing")
-        products = cursor.fetchall()
+
+        # Validate session and role for the admin (not the member being deleted)
+        cursor.execute("SELECT Role, Session FROM Login WHERE MemberID = %s", (member_id,))
+        login_info = cursor.fetchone()
+
+        print("login_info", login_info["Session"])
+        print("token", token)
+
+        if not login_info or login_info['Session'] != token:
+            return jsonify({'error': 'Unauthorized'}), 403
+        print("Authorized")
+
+        conn2 = get_db_connection(cims=False)
+        cursor2 = conn2.cursor(dictionary=True)
+        cursor2.execute("SELECT * FROM product_listing")
+        products = cursor2.fetchall()
 
         return jsonify({'products': products}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:
-        cursor.close()
-        conn.close()
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+        if 'cursor2' in locals():
+            cursor2.close()
+        if 'conn2' in locals():
+            conn2.close()
 
 # Get Product by ID endpoint
 @app.route('/getProduct/<int:product_id>', methods=['GET'])
