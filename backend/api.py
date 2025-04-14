@@ -264,6 +264,10 @@ def login():
                 (token, session_expiry, member_id)
             )
             conn.commit()
+            conn2 = get_db_connection(cims=False)
+            cursor2 = conn2.cursor()
+
+            log_to_server_and_file('Login', f'Login of name: {username}')
 
             return jsonify({'token': token}), 200
         else:
