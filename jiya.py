@@ -271,19 +271,21 @@ def delete_member():
         if not member_to_delete:
             return jsonify({'error': 'member_id is required'}), 400
         
-        # Fetch email of the member to delete
-        cursor.execute("SELECT emailID FROM members WHERE ID = %s", (member_to_delete,))
-        user_row = cursor.fetchone()
+        # Check if the MemberID is mapped to GroupID 1 in MemberGroupMapping
+        # Check if the MemberID is mapped to GroupID 1 in MemberGroupMapping
+        cursor.execute("SELECT GroupID FROM MemberGroupMapping WHERE MemberId = %s", (member_to_delete,))
+        mapping = cursor.fetchone()
 
-        if not user_row:
-            return jsonify({'error': 'Member not found'}), 404
+        # Now check if the GroupID is 1
+        if not mapping or mapping['GroupID'] != 1:
+            actual_group = mapping['GroupID'] if mapping else 'None'
+            return jsonify({'error': f'Member is not part of GroupID 1. Found GroupID: {actual_group}'}), 403
 
-        email_to_delete = user_row['emailID']
 
         # Delete from memberExt using email
         conn2 = get_db_connection(cims=False)
         cursor2 = conn2.cursor()
-        cursor2.execute("DELETE FROM memberExt WHERE Email = %s", (email_to_delete,))
+        cursor2.execute("DELETE FROM memberExt WHERE Member_Id = %s", (member_to_delete,))
         conn2.commit()
 
         # Delete from Login table
@@ -292,6 +294,10 @@ def delete_member():
 
         # Delete from members table
         cursor.execute("DELETE FROM members WHERE ID = %s", (member_to_delete,))
+        conn.commit()
+
+        # Delete from members table
+        cursor.execute("DELETE FROM MemberGroupMapping WHERE MemberID = %s", (member_to_delete,))
         conn.commit()
 
         return jsonify({'message': 'Member deleted successfully'}), 200
