@@ -17,6 +17,7 @@ const Login = () => {
         // Optionally, store user info
         localStorage.setItem('user', JSON.stringify(res.data.user));
         navigate('/');  // Redirect to home after successful login
+        window.location.reload();  // Reload the page
       } else {
         alert('Invalid login credentials');
       }
