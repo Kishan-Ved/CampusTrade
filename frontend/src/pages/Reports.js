@@ -127,7 +127,7 @@ const Reports = () => {
   useEffect(() => {
     const fetchReports = async () => {
       try {
-        const res = await axios.get('http://127.0.0.1:5001/getReportAnalytics', {
+        const res = await axios.post('http://127.0.0.1:5001/getReportAnalytics', {}, {
           headers: { Authorization: `Bearer ${token}` },
         });
 

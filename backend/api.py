@@ -1318,7 +1318,7 @@ def get_my_credit_logs():
             conn.close()
 
 # view report analytics:
-@app.route('/getReportAnalytics', methods=['GET'])
+@app.route('/getReportAnalytics', methods=['POST'])
 @token_required
 def get_report_analytics():
     try:
@@ -1335,15 +1335,42 @@ def get_report_analytics():
         conn = get_db_connection(cims=False)
         cursor = conn.cursor(dictionary=True)
 
-        query = """
+        # Step 1: DELETE old data
+        cursor.execute("DELETE FROM report_analytics")
+
+        # Step 2: INSERT new report data
+        insert_query = """
+            INSERT INTO report_analytics (Report_Type)
             SELECT 
-                Report_ID, 
-                Report_Type, 
-                Generated_On
-            FROM report_analytics
+                CONCAT('Seller ', Seller_ID, ': ', Total_Sales, ' sales, Revenue: Rs', Total_Revenue)
+            FROM (
+                SELECT 
+                    Seller_ID, 
+                    COUNT(*) AS Total_Sales, 
+                    SUM(Price) AS Total_Revenue
+                FROM transaction_listing
+                GROUP BY Seller_ID
+            ) AS SalesReport;
         """
-        cursor.execute(query)
+        cursor.execute(insert_query)
+        conn.commit()
+
+
+        # Step 3: Fetch updated report data
+        select_query = """
+            SELECT * FROM report_analytics;
+        """
+        # print("here")
+        cursor.execute(select_query)
         report_data = cursor.fetchall()
+        print(report_data)
+
+        conn2 = get_db_connection()
+        cursor2 = conn2.cursor(dictionary=True)
+
+        cursor2.execute("INSERT INTO G1_report_analytics (Report_Type) VALUES (%s)", 
+                ("Seller Summary Report",))
+        conn2.commit()
 
         return jsonify({
             'success': True,
@@ -1363,6 +1390,10 @@ def get_report_analytics():
             cursor.close()
         if 'conn' in locals():
             conn.close()
+        if 'cursor2' in locals():
+            cursor2.close()
+        if 'conn2' in locals():
+            conn2.close()
 
 if __name__ == '__main__':
     # conn = mysql.connector.connect(**db_config)
