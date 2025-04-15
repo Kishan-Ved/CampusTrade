@@ -21,8 +21,10 @@ import Reports from './pages/Reports';
 import TransactionHistory from './pages/MyTransactions';
 import MyReviews from './pages/Reviews';
 import Profile from './pages/Profile';
+import CreditLogs from './pages/CreditLogs';
 import PrivateRoute from './components/PrivateRoute';
 import Members from './pages/Members';
+import Delete_Members from './pages/Delete_Members';
 
 function App() {
   return (
@@ -44,8 +46,10 @@ function App() {
                 <Route path="/complaints" element={<PrivateRoute element={<Complaints />} />} />
                 <Route path="/reports" element={<PrivateRoute element={<Reports />} />} />
                 <Route path="/getMyTransactions" element={<PrivateRoute element={<TransactionHistory />} />} />
+                <Route path="/credit-logs" element={<PrivateRoute element={<CreditLogs />} />} />
                 <Route path="/profile" element={<PrivateRoute element={<Profile />} />} />
                 <Route path="/members" element={<PrivateRoute element={<Members />} />} />
+                <Route path="/delete-members" element={<PrivateRoute element={<Delete_Members/>} />} />
               </Routes>
             </div>
           </main>

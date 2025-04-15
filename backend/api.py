@@ -1269,6 +1269,131 @@ def get_my_listings():
             conn.close()
 
 
+# view credit logs:
+@app.route('/getMyCreditLogs', methods=['GET'])
+@token_required
+def get_my_credit_logs():
+    try:
+        token = request.headers.get('Authorization')
+        if not token or not token.startswith('Bearer '):
+            return jsonify({'error': 'Authorization token missing or malformed'}), 401
+
+        token = token.split(' ')[1]
+
+        decoded = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+        member_id = decoded['user_id']
+
+        # Get credit logs
+        conn = get_db_connection(cims=False)
+        cursor = conn.cursor(dictionary=True)
+
+        query = """
+            SELECT 
+                credit_ID, 
+                member_ID, 
+                balance
+            FROM credit_logs
+            WHERE member_ID = %s
+        """
+        cursor.execute(query, (member_id,))
+        credit_logs = cursor.fetchall()
+
+        return jsonify({
+            'success': True,
+            'credit_logs': credit_logs,
+            'count': len(credit_logs)
+        }), 200
+
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Token expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+    except mysql.connector.Error as err:
+        print(f"Database error: {err}")
+        return jsonify({'success': False, 'error': str(err)}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+
+# view report analytics:
+@app.route('/getReportAnalytics', methods=['POST'])
+@token_required
+def get_report_analytics():
+    try:
+        token = request.headers.get('Authorization')
+        if not token or not token.startswith('Bearer '):
+            return jsonify({'error': 'Authorization token missing or malformed'}), 401
+
+        token = token.split(' ')[1]
+        decoded = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+
+        # No need to extract user_id since we're not filtering
+
+        # Fetch all report analytics data
+        conn = get_db_connection(cims=False)
+        cursor = conn.cursor(dictionary=True)
+
+        # Step 1: DELETE old data
+        cursor.execute("DELETE FROM report_analytics")
+
+        # Step 2: INSERT new report data
+        insert_query = """
+            INSERT INTO report_analytics (Report_Type)
+            SELECT 
+                CONCAT('Seller ', Seller_ID, ': ', Total_Sales, ' sales, Revenue: Rs', Total_Revenue)
+            FROM (
+                SELECT 
+                    Seller_ID, 
+                    COUNT(*) AS Total_Sales, 
+                    SUM(Price) AS Total_Revenue
+                FROM transaction_listing
+                GROUP BY Seller_ID
+            ) AS SalesReport;
+        """
+        cursor.execute(insert_query)
+        conn.commit()
+
+
+        # Step 3: Fetch updated report data
+        select_query = """
+            SELECT * FROM report_analytics;
+        """
+        # print("here")
+        cursor.execute(select_query)
+        report_data = cursor.fetchall()
+        print(report_data)
+
+        conn2 = get_db_connection()
+        cursor2 = conn2.cursor(dictionary=True)
+
+        cursor2.execute("INSERT INTO G1_report_analytics (Report_Type) VALUES (%s)", 
+                ("Seller Summary Report",))
+        conn2.commit()
+
+        return jsonify({
+            'success': True,
+            'report_analytics': report_data,
+            'count': len(report_data)
+        }), 200
+
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Token expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+    except mysql.connector.Error as err:
+        print(f"Database error: {err}")
+        return jsonify({'success': False, 'error': str(err)}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+        if 'cursor2' in locals():
+            cursor2.close()
+        if 'conn2' in locals():
+            conn2.close()
 
 if __name__ == '__main__':
     # conn = mysql.connector.connect(**db_config)

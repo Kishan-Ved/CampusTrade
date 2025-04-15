@@ -28,6 +28,7 @@ const Home = () => {
               <Link to="/add-product" className="btn btn-secondary">Add Product</Link>
               <Link to="/wishlist" className="btn btn-secondary">Wishlist</Link>
               <Link to="/getMyTransactions" className="btn btn-secondary">Transactions</Link>
+              <Link to="/credit-logs" className="btn">Credit Balance</Link>
             </div>
           )}
 
