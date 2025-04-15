@@ -1,6 +1,7 @@
 // src/pages/Members.js
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import ProductCard from '../components/ProductCard'; 
 
 const Members = () => {
   const [members, setMembers] = useState([]);
@@ -51,6 +52,36 @@ const Members = () => {
     setListings([]);
   };
 
+  // Add these functions inside the Members component (before return statement):
+  const handleAddToWishlist = async (productId) => {
+    try {
+      await axios.post(
+        'http://127.0.0.1:5001/addToWishlist',
+        { product_id: productId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert('Added to wishlist!');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error adding to wishlist');
+    }
+  };
+
+  const handleBuy = async (productId, mode) => {
+    try {
+      await axios.post(
+        'http://127.0.0.1:5001/buyProduct',
+        { Product_ID: productId, payment_mode: mode },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert('Purchase successful!');
+      // Refresh listings
+      handleViewListings(selectedMember);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Purchase failed');
+    }
+  };
+
+  
   return (
     <div style={{ padding: '2rem', maxWidth: 900, margin: 'auto' }}>
       <h2>Group Members</h2>
@@ -156,15 +187,57 @@ const Members = () => {
                     <strong>Listed On:</strong>{' '}
                     {new Date(l.Listed_On).toLocaleString()}
                   </div>
-                  {l.Image_URL && (
+                  {l.Image_Data && (
                     <div>
                       <img
-                        src={l.Image_URL}
+                        src={`data:image/jpeg;base64,${l.Image_Data}`}
                         alt="Product"
                         style={{ maxWidth: 200, marginTop: 8 }}
                       />
                     </div>
                   )}
+                  {/* Add buttons here */}
+                  <div style={{ marginTop: '10px', display: 'flex', gap: '8px' }}>
+                    <button 
+                      onClick={() => handleAddToWishlist(l.Product_ID)}
+                      style={{
+                        background: '#4CAF50',
+                        color: 'white',
+                        border: 'none',
+                        padding: '6px 12px',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Add to Wishlist
+                    </button>
+                    <button
+                      onClick={() => handleBuy(l.Product_ID, 'Cash')}
+                      style={{
+                        background: '#2196F3',
+                        color: 'white',
+                        border: 'none',
+                        padding: '6px 12px',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Buy with Cash
+                    </button>
+                    <button
+                      onClick={() => handleBuy(l.Product_ID, 'Credit')}
+                      style={{
+                        background: '#9C27B0',
+                        color: 'white',
+                        border: 'none',
+                        padding: '6px 12px',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Buy on Credit
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>

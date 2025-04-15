@@ -940,17 +940,21 @@ def get_member_listing():
         conn = get_db_connection(cims=False)
         cursor = conn.cursor(dictionary=True)
 
-        # Corrected query with backticks around Condition alias
         cursor.execute("""
             SELECT 
                 Product_ID, Title, Description, Price,
                 Category_ID, Condition_ AS `Condition`,
-                Image_URL, Listed_On
+                Image_Data, Listed_On
             FROM product_listing
             WHERE Seller_ID = %s
         """, (member_id,))
         
         listings = cursor.fetchall()
+
+        # Convert Image_Data (bytes) to base64 strings
+        for listing in listings:
+            if listing['Image_Data']:
+                listing['Image_Data'] = base64.b64encode(listing['Image_Data']).decode('utf-8')
 
         return jsonify({'success': True, 'listings': listings}), 200
 
