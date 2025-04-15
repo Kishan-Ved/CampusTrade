@@ -1,7 +1,7 @@
 // src/components/ProductCard.js
 import React from 'react';
 
-const ProductCard = ({ product, onAddToWishlist, onBuyCredit, onBuyCash }) => {
+const ProductCard = ({ product, onAddToWishlist, onBuyCredit, onBuyCash, onRemoveWishlist }) => {
   // Default image if none is provided
   const defaultImage = 'https://via.placeholder.com/300x200?text=No+Image';
 
@@ -62,6 +62,16 @@ const ProductCard = ({ product, onAddToWishlist, onBuyCredit, onBuyCash }) => {
               className="btn btn-secondary"
             >
               Buy with Cash
+            </button>
+          )}
+
+          {onRemoveWishlist && (
+            <button
+              onClick={() => onRemoveWishlist(product.Product_ID || product.id)}
+              className="btn btn-danger"
+              style={{ marginTop: '0.5rem' }}
+            >
+              Remove from Wishlist
             </button>
           )}
         </div>

@@ -56,16 +56,31 @@ const ProductListing = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+  
       if (res.data.success) {
         alert('Product added to wishlist!');
       } else {
-        alert('Failed to add product to wishlist');
+        // Handle backend message, like duplicate addition
+        alert(res.data.message || 'Failed to add product to wishlist');
       }
+  
     } catch (err) {
       console.error("Error adding product to wishlist:", err);
-      alert('An error occurred. Please try again.');
+  
+      if (err.response) {
+        // Server responded with a status code outside 2xx
+        if (err.response.status === 409) {
+          alert('Product is already in your wishlist!');
+        } else {
+          alert(err.response.data.message || 'Something went wrong.');
+        }
+      } else {
+        // Network or other error
+        alert('An error occurred. Please try again.');
+      }
     }
   };
+  
 
   const buyProductOnCredit = async (productId) => {
     try {

@@ -317,7 +317,7 @@ def add_to_wishlist():
         if cursor.fetchone() is None:
             return jsonify({'success': False, 'error': 'Product not found'}), 404
 
-        # Optional: Check if it's already in the wishlist
+        # Check if it's already in the wishlist
         cursor.execute("""
             SELECT * FROM wishlist WHERE Member_ID = %s AND Product_ID = %s
         """, (member_id, product_id))
@@ -346,6 +346,55 @@ def add_to_wishlist():
             cursor.close()
         if 'conn' in locals():
             conn.close()
+
+@app.route('/deletefromwishlist', methods=['DELETE'])
+@token_required
+def delete_product_wishlist():
+    try:
+        # Get authenticated user ID from token
+        member_id = request.user_id
+
+        # Get data from request
+        data = request.get_json()
+        if not data or 'Product_ID' not in data:
+            return jsonify({'success': False, 'error': 'Missing required field: Product_ID'}), 400
+
+        product_id = data['Product_ID']
+
+        # Connect to database
+        conn = get_db_connection(cims=False)
+        cursor = conn.cursor()
+
+        # Check if the product exists in wishlist for the user
+        cursor.execute("""
+            SELECT * FROM wishlist WHERE Member_ID = %s AND Product_ID = %s
+        """, (member_id, product_id))
+        if cursor.fetchone() is None:
+            return jsonify({'success': False, 'message': 'Product not found in wishlist'}), 404
+
+        # Delete the product from wishlist
+        cursor.execute("""
+            DELETE FROM wishlist WHERE Member_ID = %s AND Product_ID = %s
+        """, (member_id, product_id))
+        conn.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Product removed from wishlist'
+        }), 200
+
+    except mysql.connector.Error as err:
+        print(f"Database error: {err}")
+        return jsonify({'success': False, 'error': str(err)}), 500
+    except Exception as e:
+        print(f"Error deleting from wishlist: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+
 
 @app.route('/getWishlist', methods=['GET'])
 @token_required
