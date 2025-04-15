@@ -66,13 +66,14 @@ CREATE TABLE credit_logs (
 );
 
 
+
 CREATE TABLE wishlist (
     Wishlist_ID INT PRIMARY KEY AUTO_INCREMENT,
     Member_ID INT NOT NULL,
     Product_ID INT NOT NULL,
     Added_On TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (Member_ID) REFERENCES memberExt(Member_ID),
-    FOREIGN KEY (Product_ID) REFERENCES product_listing(Product_ID)
+    FOREIGN KEY (Member_ID) REFERENCES memberExt(Member_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Product_ID) REFERENCES product_listing(Product_ID) ON DELETE CASCADE
 );
 
 
