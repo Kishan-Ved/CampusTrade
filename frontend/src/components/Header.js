@@ -32,14 +32,16 @@ const Header = () => {
           <nav className={`main-nav ${mobileMenuOpen ? 'active' : ''}`}>
             <ul className="nav-links">
               <li><Link to="/" className="nav-link">Home</Link></li>
-              <li><Link to="/products" className="nav-link">View Products</Link></li>
+              {/* <li><Link to="/products" className="nav-link">View Products</Link></li> */}
 
               {isLoggedIn ? (
                 <>
                   <li><Link to="/add-product" className="nav-link">Add Product</Link></li>
+                  <li><Link to="/products" className="nav-link">View Products</Link></li>
                   <li><Link to="/wishlist" className="nav-link">Wishlist</Link></li>
                   <li><Link to="/my-listings" className="nav-link">My Listings</Link></li>
                   <li><Link to="/getMyTransactions" className="nav-link">Transactions</Link></li>
+                  <li><Link to="/members" className="nav-link">Members</Link></li>
                   <li><Link to="/reviews" className="nav-link">Reviews</Link></li>
                   <li><Link to="/complaints" className="nav-link">Complaints</Link></li>
                   <li><Link to="/reports" className="nav-link">Reports</Link></li>
