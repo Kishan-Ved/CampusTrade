@@ -161,10 +161,7 @@ const AddProduct = () => {
               disabled={loading}
             >
               <option value="New">New</option>
-              <option value="Like New">Like New</option>
-              <option value="Good">Good</option>
-              <option value="Fair">Fair</option>
-              <option value="Poor">Poor</option>
+              <option value="Used">Used</option>
             </select>
           </div>
 
