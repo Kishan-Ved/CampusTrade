@@ -951,6 +951,30 @@ def get_my_reviews():
             conn.close()
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # view credit logs:
 @app.route('/getMyCreditLogs', methods=['GET'])
 @token_required
@@ -1045,9 +1069,6 @@ def get_report_analytics():
             cursor.close()
         if 'conn' in locals():
             conn.close()
-
-
-
 
 
 if __name__ == '__main__':
