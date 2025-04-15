@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
     // Check if the token exists in local storage on app load
     const token = localStorage.getItem('token');
     if (token) {
-      axios.get('http://127.0.0.1:5001/verifyToken', { headers: { Authorization: `Bearer ${token}` } })
+      axios.get('http://127.0.0.1:5001/isAuth', { headers: { Authorization: `Bearer ${token}` } })
         .then(res => {
           if (res.data.success) {
             setAuthState({
