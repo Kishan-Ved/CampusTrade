@@ -563,9 +563,18 @@ def get_categories():
 @token_required
 def get_products():
     try:
+        token = request.headers.get('Authorization')
+        if not token or not token.startswith('Bearer '):
+            return jsonify({'error': 'Authorization token missing or malformed'}), 401
+
+        token = token.split(' ')[1]
+
+        decoded = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+        member_id = decoded['user_id']
+
         conn2 = get_db_connection(cims=False)
         cursor2 = conn2.cursor(dictionary=True)
-        cursor2.execute("SELECT * FROM product_listing")
+        cursor2.execute("SELECT * FROM product_listing WHERE Seller_ID != %s", (member_id,))
         products = cursor2.fetchall()
 
         return jsonify({'products': products}), 200
