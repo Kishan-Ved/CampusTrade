@@ -563,6 +563,139 @@ def add_to_wishlist():
         cursor.close()
         conn.close()
 
+@app.route('/addComplaint', methods=['POST'])
+@token_required
+def add_complaint():
+    try:
+        # Get authenticated user ID from token
+        member_id = request.user_id
+        data = request.get_json()
+        description = data.get('description')
+
+        if not description:
+            return jsonify({'success': False, 'error': 'Description is required'}), 400
+
+        # Connect to memberExt database (cs432g1)
+        conn = get_db_connection(cims=False)
+        cursor = conn.cursor()
+
+        # Verify member exists in memberExt
+        cursor.execute("SELECT Member_ID FROM memberExt WHERE Member_ID = %s", (member_id,))
+        if not cursor.fetchone():
+            return jsonify({'success': False, 'error': 'Member not found'}), 404
+
+        # Insert complaint
+        insert_query = """
+            INSERT INTO complaints (Member_ID, Description)
+            VALUES (%s, %s)
+        """
+        cursor.execute(insert_query, (member_id, description))
+        conn.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Complaint filed successfully',
+            'complaint_id': cursor.lastrowid
+        }), 201
+
+    except mysql.connector.Error as err:
+        print("Database error:", err)
+        return jsonify({'success': False, 'error': str(err)}), 500
+        
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+
+
+@app.route('/viewComplaints', methods=['GET'])
+@token_required
+def view_complaints():
+    try:
+        member_id = request.user_id  # Extracted from JWT
+
+        conn = get_db_connection(cims=False)
+        cursor = conn.cursor()
+
+        select_query = """
+            SELECT Complaint_ID, Description, Status, Filed_On
+            FROM complaints
+            WHERE Member_ID = %s
+        """
+        cursor.execute(select_query, (member_id,))
+        complaints = cursor.fetchall()
+
+        complaints_list = []
+        for complaint in complaints:
+            complaints_list.append({
+                'complaint_id': complaint[0],
+                'description': complaint[1],
+                'status': complaint[2],
+                'filed_on': complaint[3].strftime('%Y-%m-%d %H:%M:%S')
+            })
+
+        return jsonify({
+            'success': True,
+            'complaints': complaints_list
+        }), 200
+
+    except mysql.connector.Error as err:
+        return jsonify({'success': False, 'error': str(err)}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+
+
+@app.route('/toggleComplaintStatus', methods=['POST'])
+@token_required
+def toggle_complaint_status():
+    try:
+        member_id = request.user_id
+        data = request.get_json()
+        complaint_id = data.get('complaint_id')
+
+        if not complaint_id:
+            return jsonify({'success': False, 'error': 'complaint_id is required'}), 400
+
+        conn = get_db_connection(cims=False)
+        cursor = conn.cursor()
+
+        # Fetch current status and verify ownership
+        cursor.execute(
+            "SELECT Status FROM complaints WHERE Complaint_ID = %s AND Member_ID = %s",
+            (complaint_id, member_id)
+        )
+        result = cursor.fetchone()
+        if not result:
+            return jsonify({'success': False, 'error': 'Complaint not found or not owned by user'}), 404
+
+        current_status = result[0]
+        new_status = 'Resolved' if current_status == 'Open' else 'Open'
+
+        # Update status
+        cursor.execute(
+            "UPDATE complaints SET Status = %s WHERE Complaint_ID = %s",
+            (new_status, complaint_id)
+        )
+        conn.commit()
+
+        return jsonify({
+            'success': True,
+            'complaint_id': complaint_id,
+            'new_status': new_status
+        }), 200
+
+    except mysql.connector.Error as err:
+        return jsonify({'success': False, 'error': str(err)}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+
 @app.route('/buyProduct', methods=['POST'])
 @token_required
 def buy_product():

@@ -1,3 +1,51 @@
+2025-04-14 18:49:24,321 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5050
+ * Running on http://10.7.2.35:5050
+2025-04-14 18:49:24,321 [INFO] [33mPress CTRL+C to quit[0m
+2025-04-14 18:49:24,322 [INFO]  * Restarting with stat
+2025-04-14 18:49:24,483 [WARNING]  * Debugger is active!
+2025-04-14 18:49:24,492 [INFO]  * Debugger PIN: 107-440-999
+2025-04-14 19:02:19,482 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://10.7.2.35:5001
+2025-04-14 19:02:19,482 [INFO] [33mPress CTRL+C to quit[0m
+2025-04-14 19:02:19,483 [INFO]  * Restarting with stat
+2025-04-14 19:02:19,654 [WARNING]  * Debugger is active!
+2025-04-14 19:02:19,663 [INFO]  * Debugger PIN: 107-440-999
+2025-04-14 19:03:00,720 [INFO] 127.0.0.1 - - [14/Apr/2025 19:03:00] "OPTIONS /login HTTP/1.1" 200 -
+2025-04-14 19:03:00,726 [INFO] 127.0.0.1 - - [14/Apr/2025 19:03:00] "[31m[1mPOST /login HTTP/1.1[0m" 400 -
+2025-04-14 19:03:05,762 [INFO] 127.0.0.1 - - [14/Apr/2025 19:03:05] "OPTIONS /login HTTP/1.1" 200 -
+2025-04-14 19:03:05,886 [INFO] 127.0.0.1 - - [14/Apr/2025 19:03:05] "[35m[1mPOST /login HTTP/1.1[0m" 500 -
+2025-04-14 19:03:29,656 [INFO] 127.0.0.1 - - [14/Apr/2025 19:03:29] "OPTIONS /login HTTP/1.1" 200 -
+2025-04-14 19:03:29,720 [INFO] 127.0.0.1 - - [14/Apr/2025 19:03:29] "[35m[1mPOST /login HTTP/1.1[0m" 500 -
+2025-04-14 19:04:59,825 [INFO] 127.0.0.1 - - [14/Apr/2025 19:04:59] "OPTIONS /login HTTP/1.1" 200 -
+2025-04-14 19:04:59,889 [INFO] 127.0.0.1 - - [14/Apr/2025 19:04:59] "[35m[1mPOST /login HTTP/1.1[0m" 500 -
+2025-04-14 19:06:25,343 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://10.7.2.35:5001
+2025-04-14 19:06:25,343 [INFO] [33mPress CTRL+C to quit[0m
+2025-04-14 19:06:25,344 [INFO]  * Restarting with stat
+2025-04-14 19:06:25,523 [WARNING]  * Debugger is active!
+2025-04-14 19:06:25,533 [INFO]  * Debugger PIN: 107-440-999
+2025-04-14 19:06:31,659 [INFO] 127.0.0.1 - - [14/Apr/2025 19:06:31] "OPTIONS /login HTTP/1.1" 200 -
+2025-04-14 19:06:31,809 [INFO] Action: Login | Description: Login of name: nimitt4
+2025-04-14 19:06:31,893 [INFO] 127.0.0.1 - - [14/Apr/2025 19:06:31] "POST /login HTTP/1.1" 200 -
+2025-04-14 19:06:40,961 [INFO] 127.0.0.1 - - [14/Apr/2025 19:06:40] "OPTIONS /login HTTP/1.1" 200 -
+2025-04-14 19:06:41,083 [INFO] Action: Login | Description: Login of name: nimitt4
+2025-04-14 19:06:41,175 [INFO] 127.0.0.1 - - [14/Apr/2025 19:06:41] "POST /login HTTP/1.1" 200 -
+2025-04-14 19:06:43,413 [INFO] Action: Login | Description: Login of name: nimitt4
+2025-04-14 19:06:43,494 [INFO] 127.0.0.1 - - [14/Apr/2025 19:06:43] "POST /login HTTP/1.1" 200 -
+2025-04-14 19:06:45,350 [INFO] Action: Login | Description: Login of name: nimitt4
+2025-04-14 19:06:45,425 [INFO] 127.0.0.1 - - [14/Apr/2025 19:06:45] "POST /login HTTP/1.1" 200 -
+2025-04-14 19:06:47,192 [INFO] 127.0.0.1 - - [14/Apr/2025 19:06:47] "OPTIONS /login HTTP/1.1" 200 -
+2025-04-14 19:06:47,328 [INFO] Action: Login | Description: Login of name: nimitt4
+2025-04-14 19:06:47,420 [INFO] 127.0.0.1 - - [14/Apr/2025 19:06:47] "POST /login HTTP/1.1" 200 -
+2025-04-14 19:06:51,216 [INFO] Action: Login | Description: Login of name: nimitt4
+2025-04-14 19:06:51,298 [INFO] 127.0.0.1 - - [14/Apr/2025 19:06:51] "POST /login HTTP/1.1" 200 -
+=======
 2025-04-14 19:01:15,753 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
  * Running on all addresses (0.0.0.0)
  * Running on http://127.0.0.1:5001
@@ -14,3 +62,4 @@
 2025-04-14 19:06:00,944 [INFO] 127.0.0.1 - - [14/Apr/2025 19:06:00] "[35m[1mPOST /addMember HTTP/1.1[0m" 201 -
 2025-04-14 19:07:30,961 [INFO] Action: Login | Description: Login of name: iu
 2025-04-14 19:07:31,023 [INFO] 127.0.0.1 - - [14/Apr/2025 19:07:31] "POST /login HTTP/1.1" 200 -
+
