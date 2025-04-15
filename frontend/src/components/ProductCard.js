@@ -3,16 +3,19 @@ import React from 'react';
 
 const ProductCard = ({ product, onAddToWishlist, onBuyCredit, onBuyCash, onRemoveWishlist }) => {
   // Default image if none is provided
-  const defaultImage = 'https://via.placeholder.com/300x200?text=No+Image';
+  const defaultImage = '/images/mac.png';
+  console.log(product.image)
 
   return (
     <div className="product-card">
       <div className="product-image-container">
-        <img
-          src={product.Image_URL || defaultImage}
+      <img
+          
+          src={product.image ? `data:image/png;base64,${product.image}` : defaultImage}
           alt={product.Title || product.name}
           className="product-image"
         />
+
       </div>
 
       <div className="product-info">
