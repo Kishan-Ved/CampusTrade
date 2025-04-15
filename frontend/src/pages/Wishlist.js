@@ -1,6 +1,6 @@
-// src/pages/Wishlist.js
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import ProductCard from '../components/ProductCard'; // Assuming ProductCard is used for displaying individual product details
 
 const Wishlist = () => {
   const [wishlist, setWishlist] = useState([]);
@@ -9,10 +9,14 @@ const Wishlist = () => {
   useEffect(() => {
     const fetchWishlist = async () => {
       try {
-        const res = await axios.get('http://127.0.0.1:5001/wishlist', {
+        const res = await axios.get('http://127.0.0.1:5001/getWishlist', {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setWishlist(res.data.wishlist);
+        if (res.data.success) {
+          setWishlist(res.data.wishlist);
+        } else {
+          alert(res.data.message || 'Error fetching wishlist');
+        }
       } catch (err) {
         console.error("Error fetching wishlist:", err);
       }
@@ -27,13 +31,11 @@ const Wishlist = () => {
       {wishlist.length === 0 ? (
         <p>Your wishlist is empty.</p>
       ) : (
-        <ul>
+        <div className="product-grid">
           {wishlist.map((item) => (
-            <li key={item.Product_ID}>
-              <strong>{item.Title}</strong> - {item.Description}
-            </li>
+            <ProductCard key={item.Product_ID} product={item} />
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );

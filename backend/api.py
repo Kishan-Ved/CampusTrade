@@ -294,29 +294,111 @@ def login():
             conn.close()
 
 
-@app.route('/getWishlist', methods=['GET'])
-@token_required  # Protect the route with the token_required decorator
-def get_wishlist(user_id):
+@app.route('/addToWishlist', methods=['POST'])
+@token_required
+def add_to_wishlist():
     try:
-        conn = mysql.connector.connect(**db_config_g1)
+        # Get authenticated user ID from token
+        member_id = request.user_id
+
+        # Get data from request
+        data = request.get_json()
+        if 'product_id' not in data:
+            return jsonify({'success': False, 'error': 'Missing required field: product_id'}), 400
+
+        product_id = data['product_id']
+
+        # Connect to database
+        conn = get_db_connection(cims=False)
         cursor = conn.cursor()
 
-        # Query the wishlist for the authenticated user
-        cursor.execute("SELECT * FROM Wishlist WHERE user_id = %s", (user_id,))
-        wishlist_items = cursor.fetchall()
+        # Optional: Check if the product exists
+        cursor.execute("SELECT Product_ID FROM product_listing WHERE Product_ID = %s", (product_id,))
+        if cursor.fetchone() is None:
+            return jsonify({'success': False, 'error': 'Product not found'}), 404
 
-        if not wishlist_items:
-            return jsonify({'message': 'No items found in wishlist'}), 404
+        # Optional: Check if it's already in the wishlist
+        cursor.execute("""
+            SELECT * FROM wishlist WHERE Member_ID = %s AND Product_ID = %s
+        """, (member_id, product_id))
+        if cursor.fetchone():
+            return jsonify({'success': False, 'message': 'Product is already in wishlist'}), 200
 
-        return jsonify({'wishlist': wishlist_items}), 200
+        # Insert into wishlist
+        cursor.execute("""
+            INSERT INTO wishlist (Member_ID, Product_ID) VALUES (%s, %s)
+        """, (member_id, product_id))
+        conn.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Product added to wishlist'
+        }), 201
 
     except mysql.connector.Error as err:
         print(f"Database error: {err}")
-        return jsonify({'error': str(err)}), 500
-
+        return jsonify({'success': False, 'error': str(err)}), 500
+    except Exception as e:
+        print(f"Error adding to wishlist: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
-        cursor.close()
-        conn.close()
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+
+@app.route('/getWishlist', methods=['GET'])
+@token_required
+def get_wishlist():
+    try:
+        # Get authenticated user ID from token
+        member_id = request.user_id
+
+        # Connect to database
+        conn = get_db_connection(cims=False)
+        cursor = conn.cursor()
+
+        # Fetch wishlist items for the authenticated user
+        cursor.execute("""
+            SELECT p.Product_ID, p.Title, p.Description, p.Price, p.Category_ID, p.Condition_, p.Image_URL
+            FROM wishlist w
+            JOIN product_listing p ON w.Product_ID = p.Product_ID
+            WHERE w.Member_ID = %s
+        """, (member_id,))
+
+        wishlist_items = cursor.fetchall()
+
+        # If there are no items in the wishlist
+        if not wishlist_items:
+            return jsonify({'success': False, 'message': 'Your wishlist is empty'}), 200
+
+        # Format response
+        wishlist_data = [{
+            'Product_ID': item[0],
+            'Title': item[1],
+            'Description': item[2],
+            'Price': item[3],
+            'Category_ID': item[4],
+            'Condition_': item[5],
+            'Image_URL': item[6]
+        } for item in wishlist_items]
+
+        return jsonify({
+            'success': True,
+            'wishlist': wishlist_data
+        }), 200
+
+    except mysql.connector.Error as err:
+        print(f"Database error: {err}")
+        return jsonify({'success': False, 'error': str(err)}), 500
+    except Exception as e:
+        print(f"Error getting wishlist: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
 
 
 # To Do: Cascade delete from all tables
@@ -579,22 +661,6 @@ def delete_product(product_id):
             cursor.close()
         if 'conn' in locals():
             conn.close()
-
-@app.route('/addToWishlist', methods=['POST'])
-def add_to_wishlist():
-    data = request.get_json()
-    try:
-        conn = get_db_connection(cims=False)
-        cursor = conn.cursor()
-        query = "INSERT INTO wishlist (Member_ID, Product_ID) VALUES (%s, %s)"
-        cursor.execute(query, (data['member_id'], data['product_id']))
-        conn.commit()
-        return jsonify({'message': 'Added to wishlist'}), 201
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-    finally:
-        cursor.close()
-        conn.close()
 
 @app.route('/addComplaint', methods=['POST'])
 @token_required
