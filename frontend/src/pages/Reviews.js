@@ -94,6 +94,30 @@ const MyReviews = () => {
         setReviewedUserId('');
         setRating(5);
         setReviewText('');
+        try {
+          const res = await axios.get('http://127.0.0.1:5001/getMyReviews',
+            // Payload is not needed here, fix this if there is a bug later
+
+            // {
+            //   Reviewed_User_ID: reviewedUserId,
+            //   Rating: rating,
+            //   Review_Text: reviewText,
+            // },
+            {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          if (res.data.success && res.data.reviews) {
+            const reviews = res.data.reviews;
+            const given = reviews.filter(r => String(r.Reviewer_ID) === String(myId));
+            setGivenReviews(given);
+          } else {
+            alert('Failed to fetch updated reviews.');
+          }
+        } catch (err) {
+          console.error('Error fetching updated reviews:', err);
+          alert('An error occurred while fetching updated reviews.');
+        }
       } else {
         alert('Failed to submit review.');
       }
