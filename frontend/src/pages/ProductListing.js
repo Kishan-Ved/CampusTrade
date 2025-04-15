@@ -60,6 +60,12 @@ const ProductListing = () => {
       );
       if (res.data.success) {
         alert('Product purchased!');
+        const updatedProducts = await axios.get('http://127.0.0.1:5001/getProducts', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (updatedProducts.data.products) {
+          setProducts(updatedProducts.data.products);
+        }
       } else {
         alert('Failed to purchase the product');
       }
@@ -80,6 +86,12 @@ const ProductListing = () => {
       );
       if (res.data.success) {
         alert('Product purchased!');
+        const updatedProducts = await axios.get('http://127.0.0.1:5001/getProducts', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (updatedProducts.data.products) {
+          setProducts(updatedProducts.data.products);
+        }
       } else {
         alert('Failed to purchase the product');
       }
