@@ -51,7 +51,7 @@ const ProductListing = () => {
     try {
       const res = await axios.post(
         'http://127.0.0.1:5001/addToWishlist',
-        { productId },
+        { product_id: productId },
         {
           headers: { Authorization: `Bearer ${token}` },
         }
