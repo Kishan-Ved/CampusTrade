@@ -110,18 +110,16 @@ def verify_token():
 def hello():
     return 'API is running!'
 
-
 @app.route('/addMember', methods=['POST'])
 def add_member():
     data = request.get_json()
-    # print("hello")
     username = data.get('username')
     email = data.get('email')
     dob = data.get('dob')
     password = data.get('password')
     contact_no = data.get('contact_no')
     age = data.get('age')
-    profile_image = data.get('profile_image')
+    profile_image = data.get('profile_image')  # Base64 string from frontend
     role = data.get('role')
 
     if not username or not email or not dob:
@@ -145,14 +143,25 @@ def add_member():
         # 2. Get the new member's ID
         member_id = cursor.lastrowid
 
-        insert_member_ext = """
-            INSERT INTO memberExt (Name, Member_ID, Email, Password, Contact_No, Age, Role) VALUES
-            (%s, %s, %s, %s, %s, %s, %s)
-        """
+        # Convert base64 to binary if image exists
+        profile_image_binary = None
+        if profile_image:
+            # Remove data URL prefix if present
+            if 'base64,' in profile_image:
+                profile_image = profile_image.split('base64,')[1]
+            profile_image_binary = base64.b64decode(profile_image)
 
-        cursor2.execute(insert_member_ext, (username, member_id, email, password, contact_no, age, role))
+        # 3. Insert into memberExt with Profile_Image
+        insert_member_ext = """
+            INSERT INTO memberExt 
+            (Name, Member_ID, Email, Password, Contact_No, Age, Role, Profile_Image) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """
+        cursor2.execute(insert_member_ext, 
+            (username, member_id, email, password, contact_no, age, role, profile_image_binary))
         conn2.commit()
 
+        # 4. Insert into MemberGroupMapping
         insert_mapping = """
             INSERT INTO MemberGroupMapping (MemberId, GroupId)
             VALUES (%s, %s)
@@ -160,12 +169,12 @@ def add_member():
         cursor.execute(insert_mapping, (member_id, 1))
         conn.commit()
 
-        # 3. Insert into Login with default password
+        # 5. Insert into Login with hashed password
         insert_login = """
             INSERT INTO Login (MemberID, Password, Role)
             VALUES (%s, %s, %s)
         """
-        default_password = hashlib.md5(data.get('password', '').encode()).hexdigest()  # You can hash this later
+        default_password = hashlib.md5(data.get('password', '').encode()).hexdigest()
         cursor.execute(insert_login, (member_id, default_password, 'member'))
         conn.commit()
 
@@ -1314,6 +1323,71 @@ def get_my_credit_logs():
         return jsonify({'error': 'Invalid token'}), 401
     except mysql.connector.Error as err:
         print(f"Database error: {err}")
+        return jsonify({'success': False, 'error': str(err)}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+
+import base64
+
+@app.route('/profile', methods=['GET'])
+@token_required
+def get_profile():
+    try:
+        member_id = request.user_id  # From JWT token via @token_required
+
+        conn = get_db_connection(cims=False)
+        cursor = conn.cursor(dictionary=True)
+
+        # Get user info (excluding password)
+        cursor.execute("""
+            SELECT 
+                Member_ID, Name, Email, Contact_No,
+                Age, Role, Registered_On,
+                Profile_Image
+            FROM memberExt
+            WHERE Member_ID = %s
+        """, (member_id,))
+        profile_data = cursor.fetchone()
+
+        if not profile_data:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+
+        # Convert image to base64 if present
+        if profile_data.get('Profile_Image'):
+            profile_data['Profile_Image'] = base64.b64encode(
+                profile_data['Profile_Image']
+            ).decode('utf-8')
+        else:
+            profile_data['Profile_Image'] = None
+
+        # Get products sold count
+        cursor.execute("""
+            SELECT COUNT(*) AS sold_count
+            FROM transaction_listing
+            WHERE Seller_ID = %s
+        """, (member_id,))
+        sold_count = cursor.fetchone()['sold_count']
+
+        # Get products bought count
+        cursor.execute("""
+            SELECT COUNT(*) AS bought_count
+            FROM transaction_listing
+            WHERE Buyer_ID = %s
+        """, (member_id,))
+        bought_count = cursor.fetchone()['bought_count']
+
+        profile_data['productsSold'] = sold_count
+        profile_data['productsBought'] = bought_count
+
+        return jsonify({
+            'success': True,
+            'profile': profile_data
+        }), 200
+
+    except mysql.connector.Error as err:
         return jsonify({'success': False, 'error': str(err)}), 500
     finally:
         if 'cursor' in locals():
