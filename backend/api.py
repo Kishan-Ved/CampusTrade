@@ -950,6 +950,106 @@ def get_my_reviews():
         if 'conn' in locals():
             conn.close()
 
+
+# view credit logs:
+@app.route('/getMyCreditLogs', methods=['GET'])
+@token_required
+def get_my_credit_logs():
+    try:
+        token = request.headers.get('Authorization')
+        if not token or not token.startswith('Bearer '):
+            return jsonify({'error': 'Authorization token missing or malformed'}), 401
+
+        token = token.split(' ')[1]
+
+        decoded = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+        member_id = decoded['user_id']
+
+        # Get credit logs
+        conn = get_db_connection(cims=False)
+        cursor = conn.cursor(dictionary=True)
+
+        query = """
+            SELECT 
+                credit_ID, 
+                member_ID, 
+                balance
+            FROM credit_logs
+            WHERE member_ID = %s
+        """
+        cursor.execute(query, (member_id,))
+        credit_logs = cursor.fetchall()
+
+        return jsonify({
+            'success': True,
+            'credit_logs': credit_logs,
+            'count': len(credit_logs)
+        }), 200
+
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Token expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+    except mysql.connector.Error as err:
+        print(f"Database error: {err}")
+        return jsonify({'success': False, 'error': str(err)}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+
+# view report analytics:
+@app.route('/getReportAnalytics', methods=['GET'])
+@token_required
+def get_report_analytics():
+    try:
+        token = request.headers.get('Authorization')
+        if not token or not token.startswith('Bearer '):
+            return jsonify({'error': 'Authorization token missing or malformed'}), 401
+
+        token = token.split(' ')[1]
+        decoded = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+
+        # No need to extract user_id since we're not filtering
+
+        # Fetch all report analytics data
+        conn = get_db_connection(cims=False)
+        cursor = conn.cursor(dictionary=True)
+
+        query = """
+            SELECT 
+                Report_ID, 
+                Report_Type, 
+                Generated_On
+            FROM report_analytics
+        """
+        cursor.execute(query)
+        report_data = cursor.fetchall()
+
+        return jsonify({
+            'success': True,
+            'report_analytics': report_data,
+            'count': len(report_data)
+        }), 200
+
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Token expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+    except mysql.connector.Error as err:
+        print(f"Database error: {err}")
+        return jsonify({'success': False, 'error': str(err)}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+
+
+
+
+
 if __name__ == '__main__':
     # conn = mysql.connector.connect(**db_config)
     # print("connected to DB")

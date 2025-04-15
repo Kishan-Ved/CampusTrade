@@ -27,6 +27,7 @@ const Home = () => {
               <Link to="/add-product" className="btn btn-secondary">Add Product</Link>
               <Link to="/wishlist" className="btn">Wishlist</Link>
               <Link to="/getMyTransactions" className="btn">Transactions</Link>
+              <Link to="/credit-logs" className="btn">Credit Balance</Link>
             </div>
           )}
 
@@ -36,7 +37,8 @@ const Home = () => {
               <Link to="/complaints">Complaints</Link> |
               <Link to="/reports">Reports</Link> |
               <Link to="/profile">Profile</Link> |
-              <Link to="/my-listings">My Listings</Link>
+              <Link to="/my-listings">My Listings</Link> |
+      
             </div>
           )}
         </div>
@@ -120,3 +122,4 @@ const Home = () => {
 };
 
 export default Home;
+
