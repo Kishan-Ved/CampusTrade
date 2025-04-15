@@ -31,8 +31,8 @@ CREATE TABLE product_listing (
     Condition_ ENUM('New', 'Used') NOT NULL,
     Image_URL VARCHAR(255) DEFAULT NULL,
     Listed_On TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (Seller_ID) REFERENCES memberExt(Member_ID),
-    FOREIGN KEY (Category_ID) REFERENCES category(Category_ID)
+    FOREIGN KEY (Seller_ID) REFERENCES memberExt(Member_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Category_ID) REFERENCES category(Category_ID) ON DELETE CASCADE
 );
 
 
@@ -62,7 +62,7 @@ CREATE TABLE credit_logs (
     Credit_ID INT PRIMARY KEY AUTO_INCREMENT,
     Member_ID INT NOT NULL,
     Balance DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-    FOREIGN KEY (Member_ID) REFERENCES memberExt(Member_ID)
+    FOREIGN KEY (Member_ID) REFERENCES memberExt(Member_ID) ON DELETE CASCADE
 );
 
 
@@ -84,8 +84,8 @@ CREATE TABLE reviews_ratings (
     Rating INT CHECK (Rating BETWEEN 1 AND 5),
     Review_Text TEXT,
     Timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (Reviewer_ID) REFERENCES memberExt(Member_ID),
-    FOREIGN KEY (Reviewed_User_ID) REFERENCES memberExt(Member_ID)
+    FOREIGN KEY (Reviewer_ID) REFERENCES memberExt(Member_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Reviewed_User_ID) REFERENCES memberExt(Member_ID) ON DELETE CASCADE
 );
 
 
@@ -102,7 +102,7 @@ CREATE TABLE complaints (
     Description TEXT NOT NULL,
     Status ENUM('Open', 'Resolved') DEFAULT 'Open',
     Filed_On TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (Member_ID) REFERENCES memberExt(Member_ID)
+    FOREIGN KEY (Member_ID) REFERENCES memberExt(Member_ID) ON DELETE CASCADE
 );
 
 
@@ -111,7 +111,7 @@ CREATE TABLE searches (
     Member_ID INT NOT NULL,
     Query VARCHAR(255) NOT NULL,
     Searched_On TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (Member_ID) REFERENCES memberExt(Member_ID)
+    FOREIGN KEY (Member_ID) REFERENCES memberExt(Member_ID) ON DELETE CASCADE
 );
 
 -- Insert members
