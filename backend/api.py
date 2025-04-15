@@ -43,7 +43,8 @@ db_config_cims = {
     'database': 'cs432cims'          # Your DB name
 }
 
-app.config['SECRET_KEY'] = "CS"
+app.config['SECRET_KEY'] = "IITGNCSDATABASESCAMPUSTRADE"
+
 
 def get_db_connection(cims = True):
     """Establish a database connection."""
@@ -53,7 +54,61 @@ def get_db_connection(cims = True):
         return mysql.connector.connect(**db_config_g1)
 
 
-# add member endpoint: creates entry  in the main cims member table also creates a login table entry
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+
+        # Get token from Authorization header
+        if 'Authorization' in request.headers:
+            auth_header = request.headers['Authorization']
+            if auth_header.startswith('Bearer '):
+                token = auth_header.split(' ')[1]
+
+        if not token:
+            return jsonify({'success': False, 'message': 'Token is missing'}), 401
+
+        try:
+            data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
+            request.user_id = data['user_id']
+            conn = get_db_connection()
+            cursor = conn.cursor(dictionary=True)
+
+            # Validate session and role for the admin (not the member being deleted)
+            cursor.execute("SELECT Role, Session FROM Login WHERE MemberID = %s", (request.user_id,))
+            login_info = cursor.fetchone()
+
+            print("login_info", login_info["Session"])
+            print("token", token)
+
+            if not login_info or login_info['Session'] != token:
+                return jsonify({'error': 'Unauthorized'}), 403
+
+        except jwt.ExpiredSignatureError:
+            return jsonify({'success': False, 'message': 'Token expired'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'success': False, 'message': 'Invalid token'}), 401
+
+        return f(*args, **kwargs)
+    return decorated
+
+@app.route('/isAuth', methods=['GET'])
+@token_required
+def verify_token():
+    return jsonify({
+        'success': True,
+        'user': {
+            'id': request.user_id
+        }
+    }), 200
+
+
+# Test route
+@app.route('/', methods=['GET'])
+def hello():
+    return 'API is running!'
+
+
 @app.route('/addMember', methods=['POST'])
 def add_member():
     data = request.get_json()
@@ -182,7 +237,7 @@ def add_admin():
         if 'conn' in locals():
             conn.close()
 
-# login endpoint: checks the credentials of the user and returns a token
+
 @app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -239,43 +294,6 @@ def login():
             conn.close()
 
 
-# --- Middleware to extract and verify JWT ---
-def token_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        token = None
-
-        # Get token from Authorization header
-        if 'Authorization' in request.headers:
-            auth_header = request.headers['Authorization']
-            if auth_header.startswith('Bearer '):
-                token = auth_header.split(' ')[1]
-
-        if not token:
-            return jsonify({'success': False, 'message': 'Token is missing'}), 401
-
-        try:
-            data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
-            request.user_id = data['user_id']
-        except jwt.ExpiredSignatureError:
-            return jsonify({'success': False, 'message': 'Token expired'}), 401
-        except jwt.InvalidTokenError:
-            return jsonify({'success': False, 'message': 'Invalid token'}), 401
-
-        return f(*args, **kwargs)
-    return decorated
-
-# --- Protected route ---
-@app.route('/verifyToken', methods=['GET'])
-@token_required
-def verify_token():
-    return jsonify({
-        'success': True,
-        'user': {
-            'id': request.user_id
-        }
-    }), 200
-
 @app.route('/getWishlist', methods=['GET'])
 @token_required  # Protect the route with the token_required decorator
 def get_wishlist(user_id):
@@ -301,9 +319,11 @@ def get_wishlist(user_id):
         conn.close()
 
 
+# To Do: Cascade delete from all tables
 @app.route('/deleteMember', methods=['DELETE'])
+# This is an admin only method, hence, teh decorator @token_required isn't used here, as that only checks for a valid token and not the role
 def delete_member():
-    print("here")
+    # print("here")
     token = request.headers.get('Authorization')  # Bearer <token>
     if not token or not token.startswith('Bearer '):
         return jsonify({'error': 'Authorization token missing or malformed'}), 401
@@ -332,8 +352,7 @@ def delete_member():
 
         if not member_to_delete:
             return jsonify({'error': 'member_id is required'}), 400
-        
-        # Check if the MemberID is mapped to GroupID 1 in MemberGroupMapping
+
         # Check if the MemberID is mapped to GroupID 1 in MemberGroupMapping
         cursor.execute("SELECT GroupID FROM MemberGroupMapping WHERE MemberId = %s", (member_to_delete,))
         mapping = cursor.fetchone()
@@ -446,31 +465,9 @@ def get_categories():
 
 # Get All Products endpoint
 @app.route('/getProducts', methods=['GET'])
+@token_required
 def get_products():
     try:
-        token = request.headers.get('Authorization')  # Bearer <token>
-        if not token or not token.startswith('Bearer '):
-            return jsonify({'error': 'Authorization token missing or malformed'}), 401
-
-        token = token.split(' ')[1]
-
-        decoded = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
-        member_id = decoded['user_id']  # This is the admin's ID, not the member to be deleted
-
-        conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
-
-        # Validate session and role for the admin (not the member being deleted)
-        cursor.execute("SELECT Role, Session FROM Login WHERE MemberID = %s", (member_id,))
-        login_info = cursor.fetchone()
-
-        print("login_info", login_info["Session"])
-        print("token", token)
-
-        if not login_info or login_info['Session'] != token:
-            return jsonify({'error': 'Unauthorized'}), 403
-        print("Authorized")
-
         conn2 = get_db_connection(cims=False)
         cursor2 = conn2.cursor(dictionary=True)
         cursor2.execute("SELECT * FROM product_listing")
@@ -480,10 +477,6 @@ def get_products():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if 'conn' in locals():
-            conn.close()
         if 'cursor2' in locals():
             cursor2.close()
         if 'conn2' in locals():
@@ -571,9 +564,10 @@ def add_to_wishlist():
         conn.close()
 
 @app.route('/buyProduct', methods=['POST'])
+@token_required
 def buy_product():
     try:
-        token = request.headers.get('Authorization')  # Bearer <token>
+        token = request.headers.get('Authorization')
         if not token or not token.startswith('Bearer '):
             return jsonify({'error': 'Authorization token missing or malformed'}), 401
 
@@ -581,26 +575,10 @@ def buy_product():
 
         decoded = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
         member_id = decoded['user_id']
-
-        conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
-
-        # Validate session and role for the admin (not the member being deleted)
-        cursor.execute("SELECT Role, Session FROM Login WHERE MemberID = %s", (member_id,))
-        login_info = cursor.fetchone()
-
-        print("login_info", login_info["Session"])
-        print("token", token)
-
-        if not login_info or login_info['Session'] != token:
-            return jsonify({'error': 'Unauthorized'}), 403
-        print("Authorized")
-
+        
         conn2 = get_db_connection(cims=False)
         cursor2 = conn2.cursor(dictionary=True)
 
-        # Implement this
-        # Get Product_ID from request body
         data = request.get_json()
         product_id = data.get('Product_ID')
         payment_mode = data.get('payment_mode')
@@ -670,39 +648,24 @@ def buy_product():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if 'conn' in locals():
-            conn.close()
         if 'cursor2' in locals():
             cursor2.close()
         if 'conn2' in locals():
             conn2.close()
 
 
-# Get My Transactions endpoint
 @app.route('/getMyTransactions', methods=['GET'])
+@token_required
 def get_my_transactions():
     try:
-        # Extract and validate token
         token = request.headers.get('Authorization')
         if not token or not token.startswith('Bearer '):
             return jsonify({'error': 'Authorization token missing or malformed'}), 401
 
         token = token.split(' ')[1]
-        
-        # Decode token to get user ID
+
         decoded = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
         member_id = decoded['user_id']
-        
-        # Verify session in Login table
-        conn_cims = get_db_connection()
-        cursor_cims = conn_cims.cursor(dictionary=True)
-        cursor_cims.execute("SELECT Session FROM Login WHERE MemberID = %s", (member_id,))
-        login_info = cursor_cims.fetchone()
-        
-        if not login_info or login_info['Session'] != token:
-            return jsonify({'error': 'Unauthorized'}), 403
             
         # Get transactions
         conn = get_db_connection(cims=False)
@@ -743,10 +706,6 @@ def get_my_transactions():
         print(f"Database error: {err}")
         return jsonify({'success': False, 'error': str(err)}), 500
     finally:
-        if 'cursor_cims' in locals():
-            cursor_cims.close()
-        if 'conn_cims' in locals():
-            conn_cims.close()
         if 'cursor' in locals():
             cursor.close()
         if 'conn' in locals():
@@ -755,27 +714,17 @@ def get_my_transactions():
 
 # post review endpoint
 @app.route('/addReview', methods=['POST'])
+@token_required
 def add_review():
     try:
-        # Extract and validate token
         token = request.headers.get('Authorization')
         if not token or not token.startswith('Bearer '):
             return jsonify({'error': 'Authorization token missing or malformed'}), 401
 
         token = token.split(' ')[1]
-        
-        # Decode token to get user ID
+
         decoded = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
         member_id = decoded['user_id']
-        
-        # Verify session in Login table
-        conn_cims = get_db_connection()
-        cursor_cims = conn_cims.cursor(dictionary=True)
-        cursor_cims.execute("SELECT Session FROM Login WHERE MemberID = %s", (member_id,))
-        login_info = cursor_cims.fetchone()
-        
-        if not login_info or login_info['Session'] != token:
-            return jsonify({'error': 'Unauthorized'}), 403
 
         # Get review data from request body
         data = request.get_json()
@@ -806,10 +755,6 @@ def add_review():
         print(f"Database error: {err}")
         return jsonify({'success': False, 'error': str(err)}), 500
     finally:
-        if 'cursor_cims' in locals():
-            cursor_cims.close()
-        if 'conn_cims' in locals():
-            conn_cims.close()
         if 'cursor' in locals():
             cursor.close()
         if 'conn' in locals():
@@ -818,27 +763,17 @@ def add_review():
 
 # Get My Reviews endpoint
 @app.route('/getMyReviews', methods=['GET'])
+@token_required
 def get_my_reviews():
     try:
-        # Extract and validate token
         token = request.headers.get('Authorization')
         if not token or not token.startswith('Bearer '):
             return jsonify({'error': 'Authorization token missing or malformed'}), 401
 
         token = token.split(' ')[1]
 
-        # Decode token to get user ID
         decoded = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
         member_id = decoded['user_id']
-
-        # Verify session in Login table
-        conn_cims = get_db_connection()
-        cursor_cims = conn_cims.cursor(dictionary=True)
-        cursor_cims.execute("SELECT Session FROM Login WHERE MemberID = %s", (member_id,))
-        login_info = cursor_cims.fetchone()
-
-        if not login_info or login_info['Session'] != token:
-            return jsonify({'error': 'Unauthorized'}), 403
 
         # Fetch reviews from reviews_ratings
         conn = get_db_connection(cims=False)
@@ -877,20 +812,10 @@ def get_my_reviews():
         print(f"Database error: {err}")
         return jsonify({'success': False, 'error': str(err)}), 500
     finally:
-        if 'cursor_cims' in locals():
-            cursor_cims.close()
-        if 'conn_cims' in locals():
-            conn_cims.close()
         if 'cursor' in locals():
             cursor.close()
         if 'conn' in locals():
             conn.close()
-
-
-# Test route
-@app.route('/', methods=['GET'])
-def hello():
-    return 'API is running!'
 
 if __name__ == '__main__':
     # conn = mysql.connector.connect(**db_config)
