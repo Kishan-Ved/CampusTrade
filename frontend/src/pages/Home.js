@@ -15,18 +15,19 @@ const Home = () => {
 
           {!isLoggedIn && (
             <div className="hero-buttons">
-              <Link to="/register" className="btn btn-primary">Register</Link>
+              <Link to="/register" className="btn btn-secondary">Register</Link>
               <Link to="/login" className="btn btn-secondary">Login</Link>
               {/* <Link to="/products" className="btn">View Products</Link> */}
+
             </div>
           )}
 
           {isLoggedIn && (
             <div className="hero-buttons">
-              <Link to="/products" className="btn btn-primary">View Products</Link>
+              <Link to="/products" className="btn btn-secondary">View Products</Link>
               <Link to="/add-product" className="btn btn-secondary">Add Product</Link>
-              <Link to="/wishlist" className="btn">Wishlist</Link>
-              <Link to="/getMyTransactions" className="btn">Transactions</Link>
+              <Link to="/wishlist" className="btn btn-secondary">Wishlist</Link>
+              <Link to="/getMyTransactions" className="btn btn-secondary">Transactions</Link>
             </div>
           )}
 
@@ -86,14 +87,14 @@ const Home = () => {
 
           <div className="step">
             <div className="step-number">2</div>
-            <h3>Browse or List Items</h3>
+            <h3>Browse and make wishlists</h3>
             <p>Find what you need or list items you want to sell.</p>
           </div>
 
           <div className="step">
             <div className="step-number">3</div>
-            <h3>Connect & Trade</h3>
-            <p>Arrange meetups on campus to complete transactions.</p>
+            <h3>Buy and Sell</h3>
+            <p>Complete your transactions via cash or credit.</p>
           </div>
 
           <div className="step">
@@ -107,7 +108,7 @@ const Home = () => {
       {/* Call to Action */}
       <section className="cta-section">
         <h2>Ready to Start Trading?</h2>
-        <p>Join hundreds of students already using CampusTrade</p>
+        <p>Join the CampusTrade community!</p>
 
         {!isLoggedIn ? (
           <Link to="/register" className="btn btn-accent">Create an Account</Link>
