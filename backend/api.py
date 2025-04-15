@@ -407,11 +407,11 @@ def get_wishlist():
 
         # Connect to database
         conn = get_db_connection(cims=False)
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
 
         # Fetch wishlist items for the authenticated user
         cursor.execute("""
-            SELECT p.Product_ID, p.Title, p.Description, p.Price, p.Category_ID, p.Condition_, p.Image_URL
+            SELECT p.Product_ID, p.Title, p.Description, p.Price, p.Category_ID, p.Condition_, p.Image_Data
             FROM wishlist w
             JOIN product_listing p ON w.Product_ID = p.Product_ID
             WHERE w.Member_ID = %s
@@ -419,20 +419,29 @@ def get_wishlist():
 
         wishlist_items = cursor.fetchall()
 
-        # If there are no items in the wishlist
         if not wishlist_items:
             return jsonify({'success': False, 'message': 'Your wishlist is empty'}), 200
 
         # Format response
-        wishlist_data = [{
-            'Product_ID': item[0],
-            'Title': item[1],
-            'Description': item[2],
-            'Price': item[3],
-            'Category_ID': item[4],
-            'Condition_': item[5],
-            'Image_URL': item[6]
-        } for item in wishlist_items]
+        wishlist_data = []
+        for item in wishlist_items:
+            product = {
+                'Product_ID': item['Product_ID'],
+                'Title': item['Title'],
+                'Description': item['Description'],
+                'Price': item['Price'],
+                'Category_ID': item['Category_ID'],
+                'Condition_': item['Condition_']
+            }
+
+            # Handle image conversion
+            if item.get('Image_Data'):
+                encoded_image = base64.b64encode(item['Image_Data']).decode('utf-8')
+                product['image'] = f"data:image/jpeg;base64,{encoded_image}"
+            else:
+                product['image'] = ""
+
+            wishlist_data.append(product)
 
         return jsonify({
             'success': True,
@@ -450,6 +459,7 @@ def get_wishlist():
             cursor.close()
         if 'conn' in locals():
             conn.close()
+
 
 
 # To Do: Cascade delete from all tables
@@ -625,33 +635,53 @@ def get_categories():
         conn.close()
 
 
-# Get All Products endpoint
 @app.route('/getProducts', methods=['GET'])
 @token_required
 def get_products():
     try:
-        token = request.headers.get('Authorization')
-        if not token or not token.startswith('Bearer '):
-            return jsonify({'error': 'Authorization token missing or malformed'}), 401
+        # Get authenticated user ID from token
+        member_id = request.user_id
 
-        token = token.split(' ')[1]
+        # Connect to database
+        conn = get_db_connection(cims=False)
+        cursor = conn.cursor(dictionary=True)
 
-        decoded = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
-        member_id = decoded['user_id']
+        # Query to get products not listed by the current user
+        cursor.execute("SELECT * FROM product_listing WHERE Seller_ID != %s", (member_id,))
+        products = cursor.fetchall()
 
-        conn2 = get_db_connection(cims=False)
-        cursor2 = conn2.cursor(dictionary=True)
-        cursor2.execute("SELECT * FROM product_listing WHERE Seller_ID != %s", (member_id,))
-        products = cursor2.fetchall()
+        # Process each product entry
+        for product in products:
+            for key, value in list(product.items()):
+                if isinstance(value, (datetime.date, datetime.datetime)):
+                    product[key] = value.isoformat()
+
+            # Handle image processing
+            if product.get('Image_Data'):
+                image_data = product['Image_Data']
+                encoded_image = base64.b64encode(image_data).decode('utf-8')
+                product['image'] = f"data:image/jpeg;base64,{encoded_image}"
+            else:
+                product['image'] = ""
+
+            # Remove raw image data field from response
+            if 'Image_Data' in product:
+                del product['Image_Data']
 
         return jsonify({'products': products}), 200
+
+    except mysql.connector.Error as err:
+        print(f"Database error: {err}")
+        return jsonify({'error': str(err)}), 500
     except Exception as e:
+        print(f"Error getting products: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
-        if 'cursor2' in locals():
-            cursor2.close()
-        if 'conn2' in locals():
-            conn2.close()
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+
 
 # Get Product by ID endpoint
 @app.route('/getProduct/<int:product_id>', methods=['GET'])
@@ -1186,27 +1216,14 @@ def get_my_reviews():
         if 'conn' in locals():
             conn.close()
 
-
-import base64
-import datetime
-import mysql.connector
-from flask import request, jsonify
-from functools import wraps
-
-# Assuming 'get_db_connection' and 'token_required' are defined elsewhere
-
 @app.route('/myListings', methods=['GET'])
 @token_required
 def get_my_listings():
     try:
-        # Get authenticated user ID from token
         member_id = request.user_id
-
-        # Connect to database
         conn = get_db_connection(cims=False)
         cursor = conn.cursor(dictionary=True)
 
-        # Query to get all products listed by the user
         query = """
             SELECT * FROM product_listing
             WHERE Seller_ID = %s
@@ -1215,30 +1232,23 @@ def get_my_listings():
         cursor.execute(query, (member_id,))
         listings = cursor.fetchall()
 
-        # Convert any datetime objects to strings for JSON serialization
-        # Process listings
         for listing in listings:
-            for key, value in list(listing.items()):  # iterate over a copy
+            # Handle datetime fields
+            for key, value in listing.items():
                 if isinstance(value, (datetime.date, datetime.datetime)):
                     listing[key] = value.isoformat()
-                elif isinstance(value, bytes):
-                    listing['image'] = base64.b64encode(value).decode('utf-8')
 
-            if 'Image_Data' in listing:
-                del listing['Image_Data']
-
-
-
-            # Handle the image data (convert from binary to base64 if it exists)
-            if listing.get('Image_Data'):
-                image_data = listing['Image_Data']
-                # Encode the image data as base64
+            # Handle image
+            image_data = listing.get('Image_Data')
+            if image_data:
                 encoded_image = base64.b64encode(image_data).decode('utf-8')
-                # Add the base64-encoded image to the listing data
                 listing['image'] = f"data:image/jpeg;base64,{encoded_image}"
             else:
-                # If no image data, set a placeholder or empty string
                 listing['image'] = ""
+
+            # Remove raw binary field
+            if 'Image_Data' in listing:
+                del listing['Image_Data']
 
         return jsonify({
             'success': True,
@@ -1257,6 +1267,7 @@ def get_my_listings():
             cursor.close()
         if 'conn' in locals():
             conn.close()
+
 
 
 if __name__ == '__main__':

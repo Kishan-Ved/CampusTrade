@@ -10,11 +10,11 @@ const ProductCard = ({ product, onAddToWishlist, onBuyCredit, onBuyCash, onRemov
     <div className="product-card">
       <div className="product-image-container">
       <img
-          
-          src={product.image ? `data:image/png;base64,${product.image}` : defaultImage}
-          alt={product.Title || product.name}
-          className="product-image"
-        />
+        src={product.image || defaultImage}
+        alt={product.Title || product.name}
+        className="product-image"
+      />
+
 
       </div>
 
