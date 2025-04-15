@@ -13,6 +13,7 @@ import Register from './pages/Register';
 import Login from './pages/Login';
 import ProductListing from './pages/ProductListing';
 import AddProduct from './pages/AddProduct';
+import AddtoWishlist from './pages/AddtoWishlist';
 import Wishlist from './pages/Wishlist';
 import MyListings from './pages/MyListings';
 import Reviews from './pages/Reviews';
@@ -36,6 +37,7 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/products" element={<PrivateRoute element={<ProductListing />} />} />
+                <Route path="/add-to-wishlist" element={<PrivateRoute element={<AddtoWishlist />} />} />
                 <Route path="/add-product" element={<PrivateRoute element={<AddProduct />} />} />
                 <Route path="/wishlist" element={<PrivateRoute element={<Wishlist />} />} />
                 <Route path="/my-listings" element={<PrivateRoute element={<MyListings />} />} />

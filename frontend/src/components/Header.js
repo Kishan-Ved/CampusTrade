@@ -37,6 +37,7 @@ const Header = () => {
               {isLoggedIn ? (
                 <>
                   <li><Link to="/add-product" className="nav-link">Add Product</Link></li>
+                  <li><Link to="/add-to-wishlist" className="nav-link">Add to wishlist</Link></li>
                   <li><Link to="/wishlist" className="nav-link">Wishlist</Link></li>
                   <li><Link to="/my-listings" className="nav-link">My Listings</Link></li>
                   <li><Link to="/getMyTransactions" className="nav-link">Transactions</Link></li>
