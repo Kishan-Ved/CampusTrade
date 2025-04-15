@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import ProductCard from '../components/ProductCard';
 
 const ProductListing = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const token = localStorage.getItem('token');
 
   useEffect(() => {
@@ -26,7 +30,21 @@ const ProductListing = () => {
       }
     };
 
+    const fetchCategories = async () => {
+      try {
+        const res = await axios.get('http://127.0.0.1:5001/getCategories', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.data.categories) {
+          setCategories(res.data.categories);
+        }
+      } catch (err) {
+        console.error("Error fetching categories:", err);
+      }
+    };
+
     fetchProducts();
+    fetchCategories();
   }, [token]);
 
   const handleAddToWishlist = async (productId) => {
@@ -49,7 +67,7 @@ const ProductListing = () => {
     }
   };
 
-  const BuyProductOnCredit = async (productId) => {
+  const buyProductOnCredit = async (productId) => {
     try {
       const res = await axios.post(
         'http://127.0.0.1:5001/buyProduct',
@@ -75,7 +93,7 @@ const ProductListing = () => {
     }
   };
 
-  const BuyProductWithCash = async (productId) => {
+  const buyProductWithCash = async (productId) => {
     try {
       const res = await axios.post(
         'http://127.0.0.1:5001/buyProduct',
@@ -101,45 +119,81 @@ const ProductListing = () => {
     }
   };
 
+  // Filter products based on category and search term
+  const filteredProducts = products.filter(product => {
+    const matchesCategory = selectedCategory ? product.Category_ID === parseInt(selectedCategory) : true;
+    const matchesSearch = searchTerm.trim() === '' ? true :
+      (product.Title && product.Title.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (product.Description && product.Description.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    return matchesCategory && matchesSearch;
+  });
+
   return (
-    <div style={{ padding: '2rem' }}>
-      <h2>Available Products</h2>
+    <div className="products-page">
+      <h1>Available Products</h1>
+
+      <div className="filters-container">
+        <div className="search-container">
+          <input
+            type="text"
+            placeholder="Search products..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+        </div>
+
+        <div className="category-filter">
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="category-select"
+          >
+            <option value="">All Categories</option>
+            {categories.map(category => (
+              <option key={category.Category_ID} value={category.Category_ID}>
+                {category.Category_Name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       {loading ? (
-        <p>Loading products...</p>
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Loading products...</p>
+        </div>
       ) : error ? (
-        <p>{error}</p>
-      ) : products.length === 0 ? (
-        <p>No products available.</p>
+        <div className="error-message">{error}</div>
+      ) : filteredProducts.length === 0 ? (
+        <div className="no-products-message">
+          <p>No products available.</p>
+          {searchTerm || selectedCategory ? (
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setSelectedCategory('');
+              }}
+              className="btn btn-secondary"
+            >
+              Clear Filters
+            </button>
+          ) : null}
+        </div>
       ) : (
-        <ul>
-          {products.map((product) => (
-            <li key={product.Product_ID} style={{ marginBottom: '1rem' }}>
-              <div>
-                <strong>{product.Title}</strong>
-              </div>
-              <div>{product.Description}</div>
-              <div>Price: ${product.Price}</div>
-              <div>Condition: {product.Condition_}</div>
-              <div>Category ID: {product.Category_ID}</div>
-              <div>
-                {product.Image_URL && <img src={product.Image_URL} alt={product.Title} style={{ width: '150px', height: 'auto' }} />}
-              </div>
-              <div>
-                <button onClick={() => handleAddToWishlist(product.Product_ID)}>
-                  Add to Wishlist
-                </button>
-
-                <button onClick={() => BuyProductOnCredit(product.Product_ID)}>
-                  Buy on Credit
-                </button>
-
-                <button onClick={() => BuyProductWithCash(product.Product_ID)}>
-                  Buy with Cash
-                </button>
-              </div>
-            </li>
+        <div className="product-grid">
+          {filteredProducts.map((product) => (
+            <ProductCard
+              key={product.Product_ID}
+              product={product}
+              onAddToWishlist={handleAddToWishlist}
+              onBuyCredit={buyProductOnCredit}
+              onBuyCash={buyProductWithCash}
+            />
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );
