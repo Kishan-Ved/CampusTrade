@@ -11,7 +11,10 @@ import MyListings from './pages/MyListings';
 import Reviews from './pages/Reviews';
 import Complaints from './pages/Complaints';
 import Reports from './pages/Reports';
+import TransactionHistory from './pages/MyTransactions';
+import MyReviews from './pages/Reviews';
 import PrivateRoute from './components/PrivateRoute';
+
 
 function App() {
   return (
@@ -25,9 +28,10 @@ function App() {
           <Route path="/add-product" element={<PrivateRoute element={<AddProduct />} />} />
           <Route path="/wishlist" element={<PrivateRoute element={<Wishlist />} />} />
           <Route path="/my-listings" element={<PrivateRoute element={<MyListings />} />} />
-          <Route path="/reviews" element={<PrivateRoute element={<Reviews />} />} />
+          <Route path="/reviews" element={<PrivateRoute element={<MyReviews />} />} />
           <Route path="/complaints" element={<PrivateRoute element={<Complaints />} />} />
           <Route path="/reports" element={<PrivateRoute element={<Reports />} />} />
+          <Route path="/getMyTransactions" element={<PrivateRoute element={<TransactionHistory />} />} />
         </Routes>
       </Router>
     </AuthProvider>
