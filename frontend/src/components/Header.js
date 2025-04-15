@@ -47,6 +47,9 @@ const Header = () => {
                   <li><Link to="/credit-logs" className="nav-link">Credit Balance</Link></li>
                   <li><Link to="/reports" className="nav-link">Reports</Link></li>
                   <li><Link to="/profile" className="nav-link">Profile</Link></li>
+                  {localStorage.getItem('role') === 'admin' && (
+                    <li><Link to="/delete-members" className="nav-link">Delete Members</Link></li>
+                  )}
                 </>
               ) : (
                 <>
