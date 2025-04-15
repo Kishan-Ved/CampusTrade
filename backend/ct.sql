@@ -36,16 +36,26 @@ CREATE TABLE product_listing (
 );
 
 
+-- CREATE TABLE transaction_listing (
+--     Transaction_ID INT PRIMARY KEY AUTO_INCREMENT,
+--     Buyer_ID INT NOT NULL,
+--     Seller_ID INT NOT NULL,
+--     Product_ID INT NOT NULL,
+--     Payment_Method ENUM('Cash', 'Credit') NOT NULL,
+--     Transaction_Date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     FOREIGN KEY (Buyer_ID) REFERENCES memberExt(Member_ID),
+--     FOREIGN KEY (Seller_ID) REFERENCES memberExt(Member_ID),
+--     FOREIGN KEY (Product_ID) REFERENCES product_listing(Product_ID)
+-- );
+
 CREATE TABLE transaction_listing (
     Transaction_ID INT PRIMARY KEY AUTO_INCREMENT,
     Buyer_ID INT NOT NULL,
     Seller_ID INT NOT NULL,
-    Product_ID INT NOT NULL,
+    Title VARCHAR(255) NOT NULL,
+    Price DECIMAL(10,2) NOT NULL,
     Payment_Method ENUM('Cash', 'Credit') NOT NULL,
-    Transaction_Date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (Buyer_ID) REFERENCES memberExt(Member_ID),
-    FOREIGN KEY (Seller_ID) REFERENCES memberExt(Member_ID),
-    FOREIGN KEY (Product_ID) REFERENCES product_listing(Product_ID)
+    Transaction_Date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE credit_logs (
@@ -294,3 +304,12 @@ SHOW GRANTS FOR CURRENT_USER;
 SET GLOBAL local_infile = 1;
 SELECT * from report_analytics;
 select * from memberExt;
+
+
+-- Sample products to insert in the database
+
+-- INSERT INTO product_listing (Seller_ID, Title, Description, Price, Category_ID, Condition_, Image_URL) VALUES
+-- (1218, 'Laptop', 'Used MacBook Pro, 16GB RAM, 512GB SSD', 800.00, 1, 'Used', "images/mac.png"),
+-- (1218, 'Python Programming Book', 'Learn Python from scratch', 20.00, 2, 'New', "images/mac.png"),
+-- (1218, 'Study Table', 'Wooden study table with drawer', 50.00, 3, 'Used', "images/mac.png"),
+-- (1218, 'Graphing Calculator', 'Casio FX-991EX, perfect for engineering students', 25.00, 4, 'Used', "images/mac.png");
