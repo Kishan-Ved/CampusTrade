@@ -9,7 +9,7 @@ const AddProduct = () => {
   const [condition, setCondition] = useState('New'); // Default condition is 'New'
   const [categoryId, setCategoryId] = useState('');
   const [categories, setCategories] = useState([]);
-  const [imageUrl, setImageUrl] = useState(''); // For image URL
+  const [image, setImage] = useState(null); // For storing image as a file
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
@@ -44,6 +44,17 @@ const AddProduct = () => {
     fetchCategories();
   }, [token]);
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImage(reader.result); // Set base64 encoded image
+      };
+      reader.readAsDataURL(file); // Read the file as base64 string
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -58,7 +69,7 @@ const AddProduct = () => {
         price: parseFloat(price),
         condition,
         category_id: parseInt(categoryId),
-        image_url: imageUrl || 'https://via.placeholder.com/300x200?text=No+Image'
+        image: image // Send the image as a base64 string
       };
 
       // Send the data to the backend
@@ -77,7 +88,7 @@ const AddProduct = () => {
         setPrice('');
         setCondition('New');
         setCategoryId('');
-        setImageUrl('');
+        setImage(null);
 
         // Show success message and redirect after a delay
         setTimeout(() => {
@@ -188,16 +199,15 @@ const AddProduct = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="imageUrl">Image URL (Optional)</label>
+            <label htmlFor="image">Product Image (Optional)</label>
             <input
-              type="url"
-              id="imageUrl"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
+              type="file"
+              id="image"
+              accept="image/*"
+              onChange={handleImageChange}
               disabled={loading}
-              placeholder="Enter image URL"
             />
-            <small>Enter a URL for your product image or leave blank for a placeholder</small>
+            <small>Upload an image of your product (.png)</small>
           </div>
 
           <div className="form-actions">

@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify
 import mysql.connector
 import hashlib
 from functools import wraps
+import base64
+import mysql.connector
 # import Login
 import logging
 
@@ -532,6 +534,14 @@ def delete_member():
             conn2.close()
 
 
+
+import base64
+import mysql.connector
+from flask import request, jsonify
+from functools import wraps
+
+# Assuming 'get_db_connection' and 'token_required' are defined elsewhere
+
 @app.route('/addProduct', methods=['POST'])
 @token_required
 def add_product():
@@ -554,18 +564,24 @@ def add_product():
         price = data['price']
         category_id = data['category_id']
         condition = data['condition']
-        image_url = data.get('image_url', '')  # Optional field
+        
+        # Optional: Handle base64-encoded image if it's included
+        image_data = None
+        if 'image' in data:
+            image_base64 = data['image']
+            # Decode the base64 string into binary
+            image_data = base64.b64decode(image_base64.split(',')[1])  # Remove the "data:image/jpeg;base64," part if present
 
         # Connect to database
         conn = get_db_connection(cims=False)
         cursor = conn.cursor()
 
-        # Insert product
+        # Insert product with or without the image
         query = """
-            INSERT INTO product_listing (Seller_ID, Title, Description, Price, Category_ID, Condition_, Image_URL)
+            INSERT INTO product_listing (Seller_ID, Title, Description, Price, Category_ID, Condition_, Image_Data)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
-        cursor.execute(query, (member_id, title, description, price, category_id, condition, image_url))
+        cursor.execute(query, (member_id, title, description, price, category_id, condition, image_data))
         conn.commit()
 
         # Get the ID of the newly inserted product
@@ -588,6 +604,8 @@ def add_product():
             cursor.close()
         if 'conn' in locals():
             conn.close()
+
+
 
 
 
@@ -1169,7 +1187,14 @@ def get_my_reviews():
             conn.close()
 
 
-# Get My Listings endpoint
+import base64
+import datetime
+import mysql.connector
+from flask import request, jsonify
+from functools import wraps
+
+# Assuming 'get_db_connection' and 'token_required' are defined elsewhere
+
 @app.route('/myListings', methods=['GET'])
 @token_required
 def get_my_listings():
@@ -1191,10 +1216,29 @@ def get_my_listings():
         listings = cursor.fetchall()
 
         # Convert any datetime objects to strings for JSON serialization
+        # Process listings
         for listing in listings:
-            for key, value in listing.items():
+            for key, value in list(listing.items()):  # iterate over a copy
                 if isinstance(value, (datetime.date, datetime.datetime)):
                     listing[key] = value.isoformat()
+                elif isinstance(value, bytes):
+                    listing['image'] = base64.b64encode(value).decode('utf-8')
+
+            if 'Image_Data' in listing:
+                del listing['Image_Data']
+
+
+
+            # Handle the image data (convert from binary to base64 if it exists)
+            if listing.get('Image_Data'):
+                image_data = listing['Image_Data']
+                # Encode the image data as base64
+                encoded_image = base64.b64encode(image_data).decode('utf-8')
+                # Add the base64-encoded image to the listing data
+                listing['image'] = f"data:image/jpeg;base64,{encoded_image}"
+            else:
+                # If no image data, set a placeholder or empty string
+                listing['image'] = ""
 
         return jsonify({
             'success': True,
@@ -1213,6 +1257,7 @@ def get_my_listings():
             cursor.close()
         if 'conn' in locals():
             conn.close()
+
 
 if __name__ == '__main__':
     # conn = mysql.connector.connect(**db_config)
