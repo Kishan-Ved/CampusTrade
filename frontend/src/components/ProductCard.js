@@ -53,7 +53,7 @@ const ProductCard = ({ product, onAddToWishlist, onBuyCredit, onBuyCash, onRemov
           {onBuyCredit && (
             <button
               onClick={() => onBuyCredit(product.Product_ID || product.id)}
-              className="btn btn-primary"
+              className="btn btn-secondary"
             >
               Buy with Credit
             </button>

@@ -871,6 +871,67 @@ def toggle_complaint_status():
         if 'conn' in locals():
             conn.close()
 
+@app.route('/viewGroupMembers', methods=['GET'])
+@token_required
+def view_group_members():
+    try:
+        conn = get_db_connection(cims=False)
+        cursor = conn.cursor(dictionary=True)
+
+        # Select only non-sensitive fields
+        cursor.execute("""
+            SELECT 
+                Member_ID, Name, Email, Contact_No, Age, Role, Registered_On
+            FROM 
+                memberExt
+        """)
+        members = cursor.fetchall()
+
+        return jsonify({'success': True, 'members': members}), 200
+
+    except mysql.connector.Error as err:
+        return jsonify({'success': False, 'error': str(err)}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+
+@app.route('/getMemberListing', methods=['POST'])
+@token_required
+def get_member_listing():
+    try:
+        data = request.get_json()
+        member_id = data.get('member_id')
+
+        if not member_id:
+            return jsonify({'success': False, 'error': 'member_id is required'}), 400
+
+        conn = get_db_connection(cims=False)
+        cursor = conn.cursor(dictionary=True)
+
+        # Corrected query with backticks around Condition alias
+        cursor.execute("""
+            SELECT 
+                Product_ID, Title, Description, Price,
+                Category_ID, Condition_ AS `Condition`,
+                Image_URL, Listed_On
+            FROM product_listing
+            WHERE Seller_ID = %s
+        """, (member_id,))
+        
+        listings = cursor.fetchall()
+
+        return jsonify({'success': True, 'listings': listings}), 200
+
+    except mysql.connector.Error as err:
+        return jsonify({'success': False, 'error': str(err)}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+
 @app.route('/buyProduct', methods=['POST'])
 @token_required
 def buy_product():
