@@ -696,6 +696,32 @@ def toggle_complaint_status():
         if 'conn' in locals():
             conn.close()
 
+@app.route('/viewGroupMembers', methods=['GET'])
+@token_required
+def view_group_members():
+    try:
+        conn = get_db_connection(cims=False)
+        cursor = conn.cursor(dictionary=True)
+
+        # Select only non-sensitive fields
+        cursor.execute("""
+            SELECT 
+                Member_ID, Name, Email, Contact_No, Age, Role, Registered_On
+            FROM 
+                memberExt
+        """)
+        members = cursor.fetchall()
+
+        return jsonify({'success': True, 'members': members}), 200
+
+    except mysql.connector.Error as err:
+        return jsonify({'success': False, 'error': str(err)}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+
 @app.route('/buyProduct', methods=['POST'])
 @token_required
 def buy_product():
