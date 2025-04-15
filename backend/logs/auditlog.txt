@@ -1,0 +1,86 @@
+2025-04-16 03:20:10 | Action: VerifyToken | Description: Token verification for user 2115 | User: 2115
+2025-04-16 03:20:11 | Action: VerifyToken | Description: Token verification for user 2115 | User: 2115
+2025-04-16 03:20:55 | Action: AddMember | Description: New member added with name: sujal | User: 24210242
+2025-04-16 03:21:13 | Action: Login | Description: Login of name: sujal | User: 24210242
+2025-04-16 03:21:14 | Action: VerifyToken | Description: Token verification for user 24210242 | User: 24210242
+2025-04-16 03:21:14 | Action: VerifyToken | Description: Token verification for user 24210242 | User: 24210242
+2025-04-16 03:21:19 | Action: GetCategories | Description: Categories retrieved - 14 categories
+2025-04-16 03:21:19 | Action: GetProducts | Description: Products retrieved for user 24210242 - 1 products | User: 24210242
+2025-04-16 03:21:20 | Action: GetCategories | Description: Categories retrieved - 14 categories
+2025-04-16 03:21:20 | Action: GetProducts | Description: Products retrieved for user 24210242 - 1 products | User: 24210242
+2025-04-16 03:21:27 | Action: BuyProduct | Description: Product purchased: sujal's laptop (ID: 52) by user 24210242 from seller 24210219 for 7499.99 via Credit | User: 24210242
+2025-04-16 03:21:29 | Action: GetProducts | Description: Products retrieved for user 24210242 - 0 products | User: 24210242
+2025-04-16 03:21:34 | Action: GetMyListings | Description: Listings retrieved for user 24210242 - 0 listings | User: 24210242
+2025-04-16 03:21:35 | Action: GetMyListings | Description: Listings retrieved for user 24210242 - 0 listings | User: 24210242
+2025-04-16 03:21:40 | Action: ViewGroupMembers | Description: Group members retrieved by user 24210242 - 23 members | User: 24210242
+2025-04-16 03:21:41 | Action: ViewGroupMembers | Description: Group members retrieved by user 24210242 - 23 members | User: 24210242
+2025-04-16 03:21:47 | Action: GetMyReviews | Description: Reviews retrieved for user 24210242 - 0 reviews | User: 24210242
+2025-04-16 03:21:47 | Action: GetMyReviews | Description: Reviews retrieved for user 24210242 - 0 reviews | User: 24210242
+2025-04-16 03:21:50 | Action: GetMyCreditLogs | Description: Credit logs retrieved for user 24210242 - 1 logs | User: 24210242
+2025-04-16 03:21:50 | Action: GetMyCreditLogs | Description: Credit logs retrieved for user 24210242 - 1 logs | User: 24210242
+2025-04-16 03:22:14 | Action: GetMyTransactions | Description: Transactions retrieved for user 24210242 - 1 transactions | User: 24210242
+2025-04-16 03:22:14 | Action: GetMyTransactions | Description: Transactions retrieved for user 24210242 - 1 transactions | User: 24210242
+2025-04-16 03:22:19 | Action: GetMyCreditLogs | Description: Credit logs retrieved for user 24210242 - 1 logs | User: 24210242
+2025-04-16 03:22:20 | Action: GetMyCreditLogs | Description: Credit logs retrieved for user 24210242 - 1 logs | User: 24210242
+2025-04-16 03:23:03 | Action: GetProfile | Description: Profile retrieved for user 24210242 - sold: 0, bought: 1 | User: 24210242
+2025-04-16 03:23:04 | Action: GetMyCreditLogs | Description: Credit logs retrieved for user 24210242 - 1 logs | User: 24210242
+2025-04-16 03:23:04 | Action: GetProfile | Description: Profile retrieved for user 24210242 - sold: 0, bought: 1 | User: 24210242
+2025-04-16 03:23:04 | Action: GetMyCreditLogs | Description: Credit logs retrieved for user 24210242 - 1 logs | User: 24210242
+2025-04-16 03:35:05 | Action: ViewGroupMembers | Description: Group members retrieved by user 24210242 - 23 members | User: 24210242
+2025-04-16 03:35:05 | Action: ViewGroupMembers | Description: Group members retrieved by user 24210242 - 23 members | User: 24210242
+2025-04-16 03:35:06 | Action: ViewGroupMembers | Description: Group members retrieved by user 24210242 - 23 members | User: 24210242
+2025-04-16 03:35:07 | Action: ViewGroupMembers | Description: Group members retrieved by user 24210242 - 23 members | User: 24210242
+2025-04-16 03:37:32 | Action: Login | Description: Login attempt failed - user not found: ii
+2025-04-16 03:43:17 | Action: Login | Description: Login of name: sujal | User: 24210242
+2025-04-16 03:43:18 | Action: VerifyToken | Description: Token verification for user 24210242 | User: 24210242
+2025-04-16 03:43:18 | Action: VerifyToken | Description: Token verification for user 24210242 | User: 24210242
+2025-04-16 03:43:20 | Action: GetMyCreditLogs | Description: Credit logs retrieved for user 24210242 - 1 logs | User: 24210242
+2025-04-16 03:43:21 | Action: GetMyCreditLogs | Description: Credit logs retrieved for user 24210242 - 1 logs | User: 24210242
+2025-04-16 03:43:23 | Action: VerifyToken | Description: Token verification for user 24210242 | User: 24210242
+2025-04-16 03:43:24 | Action: VerifyToken | Description: Token verification for user 24210242 | User: 24210242
+2025-04-16 03:44:07 | Action: VerifyToken | Description: Token verification for user 24210242 | User: 24210242
+2025-04-16 03:44:07 | Action: VerifyToken | Description: Token verification for user 24210242 | User: 24210242
+2025-04-16 03:44:17 | Action: GetCategories | Description: Categories retrieved - 14 categories
+2025-04-16 03:44:17 | Action: GetCategories | Description: Categories retrieved - 14 categories
+2025-04-16 03:45:13 | Action: AddProduct | Description: New product added: hello (ID: 53) by user 24210242 | User: 24210242
+2025-04-16 03:45:16 | Action: GetMyListings | Description: Listings retrieved for user 24210242 - 1 listings | User: 24210242
+2025-04-16 03:45:16 | Action: GetMyListings | Description: Listings retrieved for user 24210242 - 1 listings | User: 24210242
+2025-04-16 03:45:28 | Action: GetMyCreditLogs | Description: Credit logs retrieved for user 24210242 - 1 logs | User: 24210242
+2025-04-16 03:45:29 | Action: GetMyCreditLogs | Description: Credit logs retrieved for user 24210242 - 1 logs | User: 24210242
+2025-04-16 03:45:31 | Action: VerifyToken | Description: Token verification for user 24210242 | User: 24210242
+2025-04-16 03:45:32 | Action: VerifyToken | Description: Token verification for user 24210242 | User: 24210242
+2025-04-16 03:47:36 | Action: AddMember | Description: New member added with name: hii2 | User: 24210244
+2025-04-16 03:47:43 | Action: Login | Description: Login attempt failed - missing fields
+2025-04-16 03:47:52 | Action: Login | Description: Login of name: hii2 | User: 24210244
+2025-04-16 03:47:53 | Action: VerifyToken | Description: Token verification for user 24210244 | User: 24210244
+2025-04-16 03:47:53 | Action: VerifyToken | Description: Token verification for user 24210244 | User: 24210244
+2025-04-16 03:47:56 | Action: GetCategories | Description: Categories retrieved - 14 categories
+2025-04-16 03:47:57 | Action: GetCategories | Description: Categories retrieved - 14 categories
+2025-04-16 03:47:59 | Action: GetCategories | Description: Categories retrieved - 14 categories
+2025-04-16 03:47:59 | Action: GetProducts | Description: Products retrieved for user 24210244 - 1 products | User: 24210244
+2025-04-16 03:48:00 | Action: GetCategories | Description: Categories retrieved - 14 categories
+2025-04-16 03:48:00 | Action: GetProducts | Description: Products retrieved for user 24210244 - 1 products | User: 24210244
+2025-04-16 03:48:02 | Action: BuyProduct | Description: Product purchased: hello (ID: 53) by user 24210244 from seller 24210242 for 45.00 via Credit | User: 24210244
+2025-04-16 03:48:04 | Action: GetProducts | Description: Products retrieved for user 24210244 - 0 products | User: 24210244
+2025-04-16 03:48:06 | Action: GetMyCreditLogs | Description: Credit logs retrieved for user 24210244 - 1 logs | User: 24210244
+2025-04-16 03:48:06 | Action: GetMyCreditLogs | Description: Credit logs retrieved for user 24210244 - 1 logs | User: 24210244
+2025-04-16 03:55:52 | Action: VerifyToken | Description: Token verification for user 24210244 | User: 24210244
+2025-04-16 03:55:52 | Action: VerifyToken | Description: Token verification for user 24210244 | User: 24210244
+2025-04-16 03:55:58 | Action: Login | Description: Login of name: sujal | User: 24210242
+2025-04-16 03:55:58 | Action: VerifyToken | Description: Token verification for user 24210242 | User: 24210242
+2025-04-16 03:55:59 | Action: VerifyToken | Description: Token verification for user 24210242 | User: 24210242
+2025-04-16 03:56:02 | Action: GetMyCreditLogs | Description: Credit logs retrieved for user 24210242 - 1 logs | User: 24210242
+2025-04-16 03:56:02 | Action: GetMyCreditLogs | Description: Credit logs retrieved for user 24210242 - 1 logs | User: 24210242
+2025-04-16 03:56:21 | Action: GetProfile | Description: Profile retrieved for user 24210242 - sold: 1, bought: 1 | User: 24210242
+2025-04-16 03:56:22 | Action: GetMyCreditLogs | Description: Credit logs retrieved for user 24210242 - 1 logs | User: 24210242
+2025-04-16 03:56:22 | Action: GetProfile | Description: Profile retrieved for user 24210242 - sold: 1, bought: 1 | User: 24210242
+2025-04-16 03:56:23 | Action: GetMyCreditLogs | Description: Credit logs retrieved for user 24210242 - 1 logs | User: 24210242
+2025-04-16 03:56:29 | Action: GetMyTransactions | Description: Transactions retrieved for user 24210242 - 2 transactions | User: 24210242
+2025-04-16 03:56:29 | Action: GetMyTransactions | Description: Transactions retrieved for user 24210242 - 2 transactions | User: 24210242
+2025-04-16 03:56:37 | Action: GetProfile | Description: Profile retrieved for user 24210242 - sold: 1, bought: 1 | User: 24210242
+2025-04-16 03:56:38 | Action: GetMyCreditLogs | Description: Credit logs retrieved for user 24210242 - 1 logs | User: 24210242
+2025-04-16 03:56:38 | Action: GetProfile | Description: Profile retrieved for user 24210242 - sold: 1, bought: 1 | User: 24210242
+2025-04-16 03:56:39 | Action: GetMyCreditLogs | Description: Credit logs retrieved for user 24210242 - 1 logs | User: 24210242
+2025-04-16 03:56:42 | Action: ViewGroupMembers | Description: Group members retrieved by user 24210242 - 24 members | User: 24210242
+2025-04-16 03:56:43 | Action: ViewGroupMembers | Description: Group members retrieved by user 24210242 - 24 members | User: 24210242
+2025-04-16 03:56:48 | Action: GetMemberListing | Description: Member 2034 listings retrieved by user 24210242 - 0 listings | User: 24210242

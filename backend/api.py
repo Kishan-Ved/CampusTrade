@@ -1,31 +1,20 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, make_response
 import mysql.connector
 import hashlib
 from functools import wraps
 import base64
-import mysql.connector
-# import Login
 import logging
-
-
-from flask import Flask, request, jsonify, make_response
-import mysql.connector
 import bcrypt
 import jwt
 import datetime
-import logging
-import hashlib
 import psycopg2
-# import AddUser
-# import Login
 import requests
-# import UpdateImage
-
-# import logging
 from flask_cors import CORS
+import os
+from logger import setup_logger, log_api_action
 
-# Set up logging configuration
-# logging.basicConfig(level=logging.DEBUG)
+# Set up logging
+logger = setup_logger()
 
 app = Flask(__name__)
 CORS(app)
@@ -97,6 +86,8 @@ def token_required(f):
 @app.route('/isAuth', methods=['GET'])
 @token_required
 def verify_token():
+    # Log token verification
+    log_api_action(db_config_g1, "VerifyToken", f"Token verification for user {request.user_id}", request.user_id)
     return jsonify({
         'success': True,
         'user': {
@@ -108,6 +99,8 @@ def verify_token():
 # Test route
 @app.route('/', methods=['GET'])
 def hello():
+    # Log API health check
+    log_api_action(db_config_g1, "HealthCheck", "API health check", None)
     return 'API is running!'
 
 @app.route('/addMember', methods=['POST'])
@@ -123,6 +116,7 @@ def add_member():
     role = data.get('role')
 
     if not username or not email or not dob:
+        log_api_action(db_config_g1, "AddMember", f"Member creation failed - missing fields", None)
         return jsonify({'error': 'Missing required fields'}), 400
 
     try:
@@ -153,11 +147,11 @@ def add_member():
 
         # 3. Insert into memberExt with Profile_Image
         insert_member_ext = """
-            INSERT INTO memberExt 
-            (Name, Member_ID, Email, Password, Contact_No, Age, Role, Profile_Image) 
+            INSERT INTO memberExt
+            (Name, Member_ID, Email, Password, Contact_No, Age, Role, Profile_Image)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         """
-        cursor2.execute(insert_member_ext, 
+        cursor2.execute(insert_member_ext,
             (username, member_id, email, password, contact_no, age, role, profile_image_binary))
         conn2.commit()
 
@@ -178,13 +172,17 @@ def add_member():
         cursor.execute(insert_login, (member_id, default_password, 'member'))
         conn.commit()
 
+        # Log successful member creation
+        log_api_action(db_config_g1, "AddMember", f"New member added with name: {username}", member_id)
+
         return jsonify({
             'message': 'Member and login created successfully',
             'member_id': member_id
         }), 201
 
     except mysql.connector.Error as err:
-        print("Database error:", err)
+        logger.error(f"Database error in add_member: {err}")
+        log_api_action(db_config_g1, "AddMember", f"Member creation error: {str(err)}", None)
         return jsonify({'error': str(err)}), 500
 
     finally:
@@ -207,6 +205,7 @@ def add_admin():
     password = data.get('password')
 
     if not username or not email or not dob:
+        log_api_action(db_config_g1, "AddAdmin", f"Admin creation failed - missing fields", None)
         return jsonify({'error': 'Missing required fields'}), 400
 
     try:
@@ -233,15 +232,22 @@ def add_admin():
         cursor.execute(insert_login, (member_id, default_password, 'admin'))
         conn.commit()
 
+        # Log successful admin creation
+        log_api_action(db_config_g1, "AddAdmin", f"New admin added with name: {username}", member_id)
+
         return jsonify({
             'message': 'Admin and login created successfully',
             'member_id': member_id
         }), 201
 
     except mysql.connector.Error as err:
-        print("Database error:", err)
+        logger.error(f"Database error in add_admin: {err}")
+        log_api_action(db_config_g1, "AddAdmin", f"Admin creation error: {str(err)}", None)
         return jsonify({'error': str(err)}), 500
-
+    except Exception as e:
+        logger.error(f"Error adding admin: {e}")
+        log_api_action(db_config_g1, "AddAdmin", f"Admin creation exception: {str(e)}", None)
+        return jsonify({'error': str(e)}), 500
     finally:
         if 'cursor' in locals():
             cursor.close()
@@ -254,8 +260,8 @@ def login():
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
-    print(username, password)
     if not username or not password:
+        log_api_action(db_config_g1, "Login", f"Login attempt failed - missing fields", None)
         return jsonify({'error': 'Missing required fields'}), 400
     try:
         conn = mysql.connector.connect(**db_config_cims)
@@ -269,6 +275,7 @@ def login():
         member = cursor.fetchone()
 
         if not member:
+            log_api_action(db_config_g1, "Login", f"Login attempt failed - user not found: {username}", None)
             return jsonify({'error': 'User not found'}), 404
 
         member_id = member['ID']
@@ -290,12 +297,17 @@ def login():
             )
             conn.commit()
 
+            # Log successful login
+            log_api_action(db_config_g1, "Login", f"Login of name: {username}", member_id)
+
             return jsonify({'token': token}), 200
         else:
+            log_api_action(db_config_g1, "Login", f"Login attempt failed - invalid credentials for: {username}", None)
             return jsonify({'error': 'Invalid credentials'}), 401
 
     except mysql.connector.Error as err:
-        print("Database error:", err)
+        logger.error(f"Database error in login: {err}")
+        log_api_action(db_config_g1, "Login", f"Login error: {str(err)}", None)
         return jsonify({'error': str(err)}), 500
 
     finally:
@@ -315,6 +327,7 @@ def add_to_wishlist():
         # Get data from request
         data = request.get_json()
         if 'product_id' not in data:
+            log_api_action(db_config_g1, "AddToWishlist", f"Add to wishlist failed - missing product_id", member_id)
             return jsonify({'success': False, 'error': 'Missing required field: product_id'}), 400
 
         product_id = data['product_id']
@@ -324,8 +337,10 @@ def add_to_wishlist():
         cursor = conn.cursor()
 
         # Optional: Check if the product exists
-        cursor.execute("SELECT Product_ID FROM product_listing WHERE Product_ID = %s", (product_id,))
-        if cursor.fetchone() is None:
+        cursor.execute("SELECT Product_ID, Title FROM product_listing WHERE Product_ID = %s", (product_id,))
+        product = cursor.fetchone()
+        if product is None:
+            log_api_action(db_config_g1, "AddToWishlist", f"Add to wishlist failed - product not found: {product_id}", member_id)
             return jsonify({'success': False, 'error': 'Product not found'}), 404
 
         # Check if it's already in the wishlist
@@ -333,6 +348,7 @@ def add_to_wishlist():
             SELECT * FROM wishlist WHERE Member_ID = %s AND Product_ID = %s
         """, (member_id, product_id))
         if cursor.fetchone():
+            log_api_action(db_config_g1, "AddToWishlist", f"Add to wishlist failed - product already in wishlist: {product_id}", member_id)
             return jsonify({'success': False, 'message': 'Product is already in wishlist'}), 200
 
         # Insert into wishlist
@@ -341,16 +357,22 @@ def add_to_wishlist():
         """, (member_id, product_id))
         conn.commit()
 
+        # Log successful addition to wishlist
+        product_title = product[1] if len(product) > 1 else "Unknown"
+        log_api_action(db_config_g1, "AddToWishlist", f"Product added to wishlist: {product_title} (ID: {product_id}) by user {member_id}", member_id)
+
         return jsonify({
             'success': True,
             'message': 'Product added to wishlist'
         }), 201
 
     except mysql.connector.Error as err:
-        print(f"Database error: {err}")
+        logger.error(f"Database error in add_to_wishlist: {err}")
+        log_api_action(db_config_g1, "AddToWishlist", f"Add to wishlist error: {str(err)}", member_id if 'member_id' in locals() else None)
         return jsonify({'success': False, 'error': str(err)}), 500
     except Exception as e:
-        print(f"Error adding to wishlist: {e}")
+        logger.error(f"Error adding to wishlist: {e}")
+        log_api_action(db_config_g1, "AddToWishlist", f"Add to wishlist exception: {str(e)}", member_id if 'member_id' in locals() else None)
         return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         if 'cursor' in locals():
@@ -368,6 +390,7 @@ def delete_product_wishlist():
         # Get data from request
         data = request.get_json()
         if not data or 'Product_ID' not in data:
+            log_api_action(db_config_g1, "DeleteFromWishlist", f"Delete from wishlist failed - missing Product_ID", member_id)
             return jsonify({'success': False, 'error': 'Missing required field: Product_ID'}), 400
 
         product_id = data['Product_ID']
@@ -381,6 +404,7 @@ def delete_product_wishlist():
             SELECT * FROM wishlist WHERE Member_ID = %s AND Product_ID = %s
         """, (member_id, product_id))
         if cursor.fetchone() is None:
+            log_api_action(db_config_g1, "DeleteFromWishlist", f"Delete from wishlist failed - product not found in wishlist: {product_id}", member_id)
             return jsonify({'success': False, 'message': 'Product not found in wishlist'}), 404
 
         # Delete the product from wishlist
@@ -389,16 +413,21 @@ def delete_product_wishlist():
         """, (member_id, product_id))
         conn.commit()
 
+        # Log successful removal from wishlist
+        log_api_action(db_config_g1, "DeleteFromWishlist", f"Product removed from wishlist: (ID: {product_id}) by user {member_id}", member_id)
+
         return jsonify({
             'success': True,
             'message': 'Product removed from wishlist'
         }), 200
 
     except mysql.connector.Error as err:
-        print(f"Database error: {err}")
+        logger.error(f"Database error in delete_product_wishlist: {err}")
+        log_api_action(db_config_g1, "DeleteFromWishlist", f"Delete from wishlist error: {str(err)}", member_id if 'member_id' in locals() else None)
         return jsonify({'success': False, 'error': str(err)}), 500
     except Exception as e:
-        print(f"Error deleting from wishlist: {e}")
+        logger.error(f"Error deleting from wishlist: {e}")
+        log_api_action(db_config_g1, "DeleteFromWishlist", f"Delete from wishlist exception: {str(e)}", member_id if 'member_id' in locals() else None)
         return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         if 'cursor' in locals():
@@ -429,6 +458,7 @@ def get_wishlist():
         wishlist_items = cursor.fetchall()
 
         if not wishlist_items:
+            log_api_action(db_config_g1, "GetWishlist", f"Wishlist retrieved - empty for user {member_id}", member_id)
             return jsonify({'success': False, 'message': 'Your wishlist is empty'}), 200
 
         # Format response
@@ -452,16 +482,21 @@ def get_wishlist():
 
             wishlist_data.append(product)
 
+        # Log successful wishlist retrieval
+        log_api_action(db_config_g1, "GetWishlist", f"Wishlist retrieved for user {member_id} - {len(wishlist_items)} items", member_id)
+
         return jsonify({
             'success': True,
             'wishlist': wishlist_data
         }), 200
 
     except mysql.connector.Error as err:
-        print(f"Database error: {err}")
+        logger.error(f"Database error in get_wishlist: {err}")
+        log_api_action(db_config_g1, "GetWishlist", f"Wishlist retrieval error: {str(err)}", member_id if 'member_id' in locals() else None)
         return jsonify({'success': False, 'error': str(err)}), 500
     except Exception as e:
-        print(f"Error getting wishlist: {e}")
+        logger.error(f"Error getting wishlist: {e}")
+        log_api_action(db_config_g1, "GetWishlist", f"Wishlist retrieval exception: {str(e)}", member_id if 'member_id' in locals() else None)
         return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         if 'cursor' in locals():
@@ -575,6 +610,7 @@ def add_product():
         required_fields = ['title', 'description', 'price', 'category_id', 'condition']
         for field in required_fields:
             if field not in data:
+                log_api_action(db_config_g1, "AddProduct", f"Product creation failed - missing field: {field}", member_id)
                 return jsonify({'success': False, 'error': f'Missing required field: {field}'}), 400
 
         # Extract data
@@ -583,7 +619,7 @@ def add_product():
         price = data['price']
         category_id = data['category_id']
         condition = data['condition']
-        
+
         # Optional: Handle base64-encoded image if it's included
         image_data = None
         if 'image' in data:
@@ -606,6 +642,9 @@ def add_product():
         # Get the ID of the newly inserted product
         product_id = cursor.lastrowid
 
+        # Log successful product creation
+        log_api_action(db_config_g1, "AddProduct", f"New product added: {title} (ID: {product_id}) by user {member_id}", member_id)
+
         return jsonify({
             'success': True,
             'message': 'Product listed successfully',
@@ -613,10 +652,12 @@ def add_product():
         }), 201
 
     except mysql.connector.Error as err:
-        print(f"Database error: {err}")
+        logger.error(f"Database error in add_product: {err}")
+        log_api_action(db_config_g1, "AddProduct", f"Product creation error: {str(err)}", member_id if 'member_id' in locals() else None)
         return jsonify({'success': False, 'error': str(err)}), 500
     except Exception as e:
-        print(f"Error adding product: {e}")
+        logger.error(f"Error adding product: {e}")
+        log_api_action(db_config_g1, "AddProduct", f"Product creation exception: {str(e)}", member_id if 'member_id' in locals() else None)
         return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         if 'cursor' in locals():
@@ -635,9 +676,14 @@ def get_categories():
         cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT * FROM category")
         categories = cursor.fetchall()
-        print(categories)
+
+        # Log successful categories retrieval
+        log_api_action(db_config_g1, "GetCategories", f"Categories retrieved - {len(categories)} categories", None)
+
         return jsonify({'categories': categories}), 200
     except Exception as e:
+        logger.error(f"Error getting categories: {e}")
+        log_api_action(db_config_g1, "GetCategories", f"Categories retrieval error: {str(e)}", None)
         return jsonify({'error': str(e)}), 500
     finally:
         cursor.close()
@@ -677,13 +723,18 @@ def get_products():
             if 'Image_Data' in product:
                 del product['Image_Data']
 
+        # Log successful products retrieval
+        log_api_action(db_config_g1, "GetProducts", f"Products retrieved for user {member_id} - {len(products)} products", member_id)
+
         return jsonify({'products': products}), 200
 
     except mysql.connector.Error as err:
-        print(f"Database error: {err}")
+        logger.error(f"Database error in get_products: {err}")
+        log_api_action(db_config_g1, "GetProducts", f"Products retrieval error: {str(err)}", member_id if 'member_id' in locals() else None)
         return jsonify({'error': str(err)}), 500
     except Exception as e:
-        print(f"Error getting products: {e}")
+        logger.error(f"Error getting products: {e}")
+        log_api_action(db_config_g1, "GetProducts", f"Products retrieval exception: {str(e)}", member_id if 'member_id' in locals() else None)
         return jsonify({'error': str(e)}), 500
     finally:
         if 'cursor' in locals():
@@ -703,10 +754,16 @@ def get_product(product_id):
         product = cursor.fetchone()
 
         if product:
+            # Log successful product retrieval
+            log_api_action(db_config_g1, "GetProduct", f"Product retrieved: {product['Title']} (ID: {product_id})", None)
             return jsonify({'product': product}), 200
         else:
+            # Log product not found
+            log_api_action(db_config_g1, "GetProduct", f"Product not found: {product_id}", None)
             return jsonify({'error': 'Product not found'}), 404
     except Exception as e:
+        logger.error(f"Error getting product: {e}")
+        log_api_action(db_config_g1, "GetProduct", f"Product retrieval error: {str(e)}", None)
         return jsonify({'error': str(e)}), 500
     finally:
         cursor.close()
@@ -720,6 +777,14 @@ def update_product(product_id):
         conn = get_db_connection(cims=False)
         cursor = conn.cursor()
 
+        # First check if the product exists
+        cursor.execute("SELECT Title FROM product_listing WHERE Product_ID = %s", (product_id,))
+        product = cursor.fetchone()
+
+        if not product:
+            log_api_action(db_config_g1, "UpdateProduct", f"Product update failed - product not found: {product_id}", data.get('seller_id'))
+            return jsonify({'error': 'Product not found'}), 404
+
         # Update product in the product_listing table
         query = """
             UPDATE product_listing
@@ -732,8 +797,13 @@ def update_product(product_id):
         ))
         conn.commit()
 
+        # Log successful product update
+        log_api_action(db_config_g1, "UpdateProduct", f"Product updated: {data['title']} (ID: {product_id}) by seller {data['seller_id']}", data['seller_id'])
+
         return jsonify({'message': 'Product updated successfully'}), 200
     except Exception as e:
+        logger.error(f"Error updating product: {e}")
+        log_api_action(db_config_g1, "UpdateProduct", f"Product update error: {str(e)}", data.get('seller_id') if 'data' in locals() else None)
         return jsonify({'error': str(e)}), 500
     finally:
         cursor.close()
@@ -751,25 +821,32 @@ def delete_product(product_id):
         cursor = conn.cursor(dictionary=True)
 
         # First check if the product belongs to the authenticated user
-        cursor.execute("SELECT Seller_ID FROM product_listing WHERE Product_ID = %s", (product_id,))
+        cursor.execute("SELECT Seller_ID, Title FROM product_listing WHERE Product_ID = %s", (product_id,))
         product = cursor.fetchone()
 
         if not product:
+            log_api_action(db_config_g1, "DeleteProduct", f"Product deletion failed - product not found: {product_id}", member_id)
             return jsonify({'success': False, 'error': 'Product not found'}), 404
 
         if str(product['Seller_ID']) != str(member_id):
+            log_api_action(db_config_g1, "DeleteProduct", f"Product deletion failed - unauthorized: user {member_id} attempted to delete product {product_id} owned by {product['Seller_ID']}", member_id)
             return jsonify({'success': False, 'error': 'You are not authorized to delete this product'}), 403
 
         # Delete product from the product_listing table
         cursor.execute("DELETE FROM product_listing WHERE Product_ID = %s", (product_id,))
         conn.commit()
 
+        # Log successful product deletion
+        log_api_action(db_config_g1, "DeleteProduct", f"Product deleted: {product['Title']} (ID: {product_id}) by user {member_id}", member_id)
+
         return jsonify({'success': True, 'message': 'Product deleted successfully'}), 200
     except mysql.connector.Error as err:
-        print(f"Database error: {err}")
+        logger.error(f"Database error in delete_product: {err}")
+        log_api_action(db_config_g1, "DeleteProduct", f"Product deletion error: {str(err)}", member_id if 'member_id' in locals() else None)
         return jsonify({'success': False, 'error': str(err)}), 500
     except Exception as e:
-        print(f"Error deleting product: {e}")
+        logger.error(f"Error deleting product: {e}")
+        log_api_action(db_config_g1, "DeleteProduct", f"Product deletion exception: {str(e)}", member_id if 'member_id' in locals() else None)
         return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         if 'cursor' in locals():
@@ -787,6 +864,7 @@ def add_complaint():
         description = data.get('description')
 
         if not description:
+            log_api_action(db_config_g1, "AddComplaint", f"Complaint creation failed - missing description", member_id)
             return jsonify({'success': False, 'error': 'Description is required'}), 400
 
         # Connect to memberExt database (cs432g1)
@@ -796,6 +874,7 @@ def add_complaint():
         # Verify member exists in memberExt
         cursor.execute("SELECT Member_ID FROM memberExt WHERE Member_ID = %s", (member_id,))
         if not cursor.fetchone():
+            log_api_action(db_config_g1, "AddComplaint", f"Complaint creation failed - member not found: {member_id}", member_id)
             return jsonify({'success': False, 'error': 'Member not found'}), 404
 
         # Insert complaint
@@ -806,16 +885,25 @@ def add_complaint():
         cursor.execute(insert_query, (member_id, description))
         conn.commit()
 
+        complaint_id = cursor.lastrowid
+
+        # Log successful complaint creation
+        log_api_action(db_config_g1, "AddComplaint", f"New complaint filed (ID: {complaint_id}) by user {member_id}", member_id)
+
         return jsonify({
             'success': True,
             'message': 'Complaint filed successfully',
-            'complaint_id': cursor.lastrowid
+            'complaint_id': complaint_id
         }), 201
 
     except mysql.connector.Error as err:
-        print("Database error:", err)
+        logger.error(f"Database error in add_complaint: {err}")
+        log_api_action(db_config_g1, "AddComplaint", f"Complaint creation error: {str(err)}", member_id if 'member_id' in locals() else None)
         return jsonify({'success': False, 'error': str(err)}), 500
-
+    except Exception as e:
+        logger.error(f"Error adding complaint: {e}")
+        log_api_action(db_config_g1, "AddComplaint", f"Complaint creation exception: {str(e)}", member_id if 'member_id' in locals() else None)
+        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         if 'cursor' in locals():
             cursor.close()
@@ -849,13 +937,22 @@ def view_complaints():
                 'filed_on': complaint[3].strftime('%Y-%m-%d %H:%M:%S')
             })
 
+        # Log successful complaints retrieval
+        log_api_action(db_config_g1, "ViewComplaints", f"Complaints retrieved for user {member_id} - {len(complaints)} complaints", member_id)
+
         return jsonify({
             'success': True,
             'complaints': complaints_list
         }), 200
 
     except mysql.connector.Error as err:
+        logger.error(f"Database error in view_complaints: {err}")
+        log_api_action(db_config_g1, "ViewComplaints", f"Complaints retrieval error: {str(err)}", member_id if 'member_id' in locals() else None)
         return jsonify({'success': False, 'error': str(err)}), 500
+    except Exception as e:
+        logger.error(f"Error viewing complaints: {e}")
+        log_api_action(db_config_g1, "ViewComplaints", f"Complaints retrieval exception: {str(e)}", member_id if 'member_id' in locals() else None)
+        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         if 'cursor' in locals():
             cursor.close()
@@ -872,6 +969,7 @@ def toggle_complaint_status():
         complaint_id = data.get('complaint_id')
 
         if not complaint_id:
+            log_api_action(db_config_g1, "ToggleComplaintStatus", f"Toggle complaint status failed - missing complaint_id", member_id)
             return jsonify({'success': False, 'error': 'complaint_id is required'}), 400
 
         conn = get_db_connection(cims=False)
@@ -884,6 +982,7 @@ def toggle_complaint_status():
         )
         result = cursor.fetchone()
         if not result:
+            log_api_action(db_config_g1, "ToggleComplaintStatus", f"Toggle complaint status failed - complaint not found or not owned: {complaint_id}", member_id)
             return jsonify({'success': False, 'error': 'Complaint not found or not owned by user'}), 404
 
         current_status = result[0]
@@ -896,6 +995,9 @@ def toggle_complaint_status():
         )
         conn.commit()
 
+        # Log successful complaint status toggle
+        log_api_action(db_config_g1, "ToggleComplaintStatus", f"Complaint status toggled from {current_status} to {new_status} for complaint {complaint_id} by user {member_id}", member_id)
+
         return jsonify({
             'success': True,
             'complaint_id': complaint_id,
@@ -903,7 +1005,13 @@ def toggle_complaint_status():
         }), 200
 
     except mysql.connector.Error as err:
+        logger.error(f"Database error in toggle_complaint_status: {err}")
+        log_api_action(db_config_g1, "ToggleComplaintStatus", f"Toggle complaint status error: {str(err)}", member_id if 'member_id' in locals() else None)
         return jsonify({'success': False, 'error': str(err)}), 500
+    except Exception as e:
+        logger.error(f"Error toggling complaint status: {e}")
+        log_api_action(db_config_g1, "ToggleComplaintStatus", f"Toggle complaint status exception: {str(e)}", member_id if 'member_id' in locals() else None)
+        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         if 'cursor' in locals():
             cursor.close()
@@ -914,22 +1022,32 @@ def toggle_complaint_status():
 @token_required
 def view_group_members():
     try:
+        member_id = request.user_id
         conn = get_db_connection(cims=False)
         cursor = conn.cursor(dictionary=True)
 
         # Select only non-sensitive fields
         cursor.execute("""
-            SELECT 
+            SELECT
                 Member_ID, Name, Email, Contact_No, Age, Role, Registered_On
-            FROM 
+            FROM
                 memberExt
         """)
         members = cursor.fetchall()
 
+        # Log successful group members retrieval
+        log_api_action(db_config_g1, "ViewGroupMembers", f"Group members retrieved by user {member_id} - {len(members)} members", member_id)
+
         return jsonify({'success': True, 'members': members}), 200
 
     except mysql.connector.Error as err:
+        logger.error(f"Database error in view_group_members: {err}")
+        log_api_action(db_config_g1, "ViewGroupMembers", f"Group members retrieval error: {str(err)}", member_id if 'member_id' in locals() else None)
         return jsonify({'success': False, 'error': str(err)}), 500
+    except Exception as e:
+        logger.error(f"Error viewing group members: {e}")
+        log_api_action(db_config_g1, "ViewGroupMembers", f"Group members retrieval exception: {str(e)}", member_id if 'member_id' in locals() else None)
+        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         if 'cursor' in locals():
             cursor.close()
@@ -940,24 +1058,26 @@ def view_group_members():
 @token_required
 def get_member_listing():
     try:
+        requesting_member_id = request.user_id
         data = request.get_json()
         member_id = data.get('member_id')
 
         if not member_id:
+            log_api_action(db_config_g1, "GetMemberListing", f"Member listing retrieval failed - missing member_id", requesting_member_id)
             return jsonify({'success': False, 'error': 'member_id is required'}), 400
 
         conn = get_db_connection(cims=False)
         cursor = conn.cursor(dictionary=True)
 
         cursor.execute("""
-            SELECT 
+            SELECT
                 Product_ID, Title, Description, Price,
                 Category_ID, Condition_ AS `Condition`,
                 Image_Data, Listed_On
             FROM product_listing
             WHERE Seller_ID = %s
         """, (member_id,))
-        
+
         listings = cursor.fetchall()
 
         # Convert Image_Data (bytes) to base64 strings
@@ -965,10 +1085,19 @@ def get_member_listing():
             if listing['Image_Data']:
                 listing['Image_Data'] = base64.b64encode(listing['Image_Data']).decode('utf-8')
 
+        # Log successful member listing retrieval
+        log_api_action(db_config_g1, "GetMemberListing", f"Member {member_id} listings retrieved by user {requesting_member_id} - {len(listings)} listings", requesting_member_id)
+
         return jsonify({'success': True, 'listings': listings}), 200
 
     except mysql.connector.Error as err:
+        logger.error(f"Database error in get_member_listing: {err}")
+        log_api_action(db_config_g1, "GetMemberListing", f"Member listing retrieval error: {str(err)}", requesting_member_id if 'requesting_member_id' in locals() else None)
         return jsonify({'success': False, 'error': str(err)}), 500
+    except Exception as e:
+        logger.error(f"Error getting member listing: {e}")
+        log_api_action(db_config_g1, "GetMemberListing", f"Member listing retrieval exception: {str(e)}", requesting_member_id if 'requesting_member_id' in locals() else None)
+        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         if 'cursor' in locals():
             cursor.close()
@@ -981,6 +1110,7 @@ def buy_product():
     try:
         token = request.headers.get('Authorization')
         if not token or not token.startswith('Bearer '):
+            log_api_action(db_config_g1, "BuyProduct", f"Purchase failed - missing or malformed token", None)
             return jsonify({'error': 'Authorization token missing or malformed'}), 401
 
         token = token.split(' ')[1]
@@ -995,9 +1125,11 @@ def buy_product():
         product_id = data.get('Product_ID')
         payment_mode = data.get('payment_mode')
         if not payment_mode:
+            log_api_action(db_config_g1, "BuyProduct", f"Purchase failed - missing payment mode", member_id)
             return jsonify({'error': 'Payment mode is required'}), 400
 
         if not product_id:
+            log_api_action(db_config_g1, "BuyProduct", f"Purchase failed - missing product ID", member_id)
             return jsonify({'error': 'Product_ID is required'}), 400
 
         # Get Seller_ID and price from product_listing table
@@ -1005,6 +1137,7 @@ def buy_product():
         product_details = cursor2.fetchone()
 
         if not product_details:
+            log_api_action(db_config_g1, "BuyProduct", f"Purchase failed - product not found: {product_id}", member_id)
             return jsonify({'error': 'Product not found'}), 404
 
         seller_id = product_details['Seller_ID']
@@ -1021,24 +1154,24 @@ def buy_product():
             buyer_credit = cursor2.fetchone()
 
             if buyer_credit:
-                # Update buyer's balance
-                new_balance = buyer_credit['balance'] + price
+                # Update buyer's balance - DEDUCT the price
+                new_balance = buyer_credit['balance'] - price
                 cursor2.execute("UPDATE credit_logs SET balance = %s WHERE member_id = %s", (new_balance, member_id))
             else:
-                # Insert new record for buyer with initial balance
-                cursor2.execute("INSERT INTO credit_logs (member_id, balance) VALUES (%s, %s)", (member_id, price))
+                # Insert new record for buyer with negative balance
+                cursor2.execute("INSERT INTO credit_logs (member_id, balance) VALUES (%s, %s)", (member_id, -price))
 
             # Check if seller_id exists in credit_logs
             cursor2.execute("SELECT balance FROM credit_logs WHERE member_id = %s", (seller_id,))
             seller_credit = cursor2.fetchone()
 
             if seller_credit:
-                # Decrease seller's balance
-                new_balance = seller_credit['balance'] - price
+                # Increase seller's balance
+                new_balance = seller_credit['balance'] + price
                 cursor2.execute("UPDATE credit_logs SET balance = %s WHERE member_id = %s", (new_balance, seller_id))
             else:
-                # Insert new record for seller with negative balance
-                cursor2.execute("INSERT INTO credit_logs (member_id, balance) VALUES (%s, %s)", (seller_id, -price))
+                # Insert new record for seller with positive balance
+                cursor2.execute("INSERT INTO credit_logs (member_id, balance) VALUES (%s, %s)", (seller_id, price))
 
             conn2.commit()
 
@@ -1054,10 +1187,20 @@ def buy_product():
         cursor2.execute("DELETE FROM wishlist WHERE Member_ID = %s AND Product_ID = %s", (member_id, product_id))
         conn2.commit()
 
+        # Log successful purchase
+        log_api_action(db_config_g1, "BuyProduct", f"Product purchased: {title} (ID: {product_id}) by user {member_id} from seller {seller_id} for {price} via {payment_mode}", member_id)
+
         return jsonify({'success': True, 'message': 'Product purchased and removed successfully'}), 200
 
-
+    except jwt.ExpiredSignatureError:
+        log_api_action(db_config_g1, "BuyProduct", f"Purchase failed - token expired", None)
+        return jsonify({'error': 'Token expired'}), 401
+    except jwt.InvalidTokenError:
+        log_api_action(db_config_g1, "BuyProduct", f"Purchase failed - invalid token", None)
+        return jsonify({'error': 'Invalid token'}), 401
     except Exception as e:
+        logger.error(f"Error in buy_product: {e}")
+        log_api_action(db_config_g1, "BuyProduct", f"Purchase error: {str(e)}", member_id if 'member_id' in locals() else None)
         return jsonify({'error': str(e)}), 500
     finally:
         if 'cursor2' in locals():
@@ -1070,14 +1213,8 @@ def buy_product():
 @token_required
 def get_my_transactions():
     try:
-        token = request.headers.get('Authorization')
-        if not token or not token.startswith('Bearer '):
-            return jsonify({'error': 'Authorization token missing or malformed'}), 401
-
-        token = token.split(' ')[1]
-
-        decoded = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
-        member_id = decoded['user_id']
+        # Get authenticated user ID from token
+        member_id = request.user_id
 
         # Get transactions
         conn = get_db_connection(cims=False)
@@ -1104,6 +1241,9 @@ def get_my_transactions():
             if 'Transaction_Date' in transaction and transaction['Transaction_Date']:
                 transaction['Transaction_Date'] = transaction['Transaction_Date'].isoformat()
 
+        # Log successful transactions retrieval
+        log_api_action(db_config_g1, "GetMyTransactions", f"Transactions retrieved for user {member_id} - {len(transactions)} transactions", member_id)
+
         return jsonify({
             'success': True,
             'transactions': transactions,
@@ -1111,12 +1251,19 @@ def get_my_transactions():
         }), 200
 
     except jwt.ExpiredSignatureError:
+        log_api_action(db_config_g1, "GetMyTransactions", f"Transactions retrieval failed - token expired", None)
         return jsonify({'error': 'Token expired'}), 401
     except jwt.InvalidTokenError:
+        log_api_action(db_config_g1, "GetMyTransactions", f"Transactions retrieval failed - invalid token", None)
         return jsonify({'error': 'Invalid token'}), 401
     except mysql.connector.Error as err:
-        print(f"Database error: {err}")
+        logger.error(f"Database error in get_my_transactions: {err}")
+        log_api_action(db_config_g1, "GetMyTransactions", f"Transactions retrieval error: {str(err)}", member_id if 'member_id' in locals() else None)
         return jsonify({'success': False, 'error': str(err)}), 500
+    except Exception as e:
+        logger.error(f"Error getting transactions: {e}")
+        log_api_action(db_config_g1, "GetMyTransactions", f"Transactions retrieval exception: {str(e)}", member_id if 'member_id' in locals() else None)
+        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         if 'cursor' in locals():
             cursor.close()
@@ -1129,14 +1276,8 @@ def get_my_transactions():
 @token_required
 def add_review():
     try:
-        token = request.headers.get('Authorization')
-        if not token or not token.startswith('Bearer '):
-            return jsonify({'error': 'Authorization token missing or malformed'}), 401
-
-        token = token.split(' ')[1]
-
-        decoded = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
-        member_id = decoded['user_id']
+        # Get authenticated user ID from token
+        member_id = request.user_id
 
         # Get review data from request body
         data = request.get_json()
@@ -1145,6 +1286,7 @@ def add_review():
         review_text = data.get('Review_Text')
 
         if not reviewed_user_id or not rating:
+            log_api_action(db_config_g1, "AddReview", f"Review creation failed - missing required fields", member_id)
             return jsonify({'error': 'Missing required fields'}), 400
 
         # Insert review
@@ -1157,15 +1299,27 @@ def add_review():
         cursor.execute(insert_query, (member_id, reviewed_user_id, rating, review_text))
         conn.commit()
 
+        review_id = cursor.lastrowid
+
+        # Log successful review creation
+        log_api_action(db_config_g1, "AddReview", f"Review added (ID: {review_id}) by user {member_id} for user {reviewed_user_id} with rating {rating}", member_id)
+
         return jsonify({'success': True, 'message': 'Review submitted successfully'}), 201
 
     except jwt.ExpiredSignatureError:
+        log_api_action(db_config_g1, "AddReview", f"Review creation failed - token expired", None)
         return jsonify({'error': 'Token expired'}), 401
     except jwt.InvalidTokenError:
+        log_api_action(db_config_g1, "AddReview", f"Review creation failed - invalid token", None)
         return jsonify({'error': 'Invalid token'}), 401
     except mysql.connector.Error as err:
-        print(f"Database error: {err}")
+        logger.error(f"Database error in add_review: {err}")
+        log_api_action(db_config_g1, "AddReview", f"Review creation error: {str(err)}", member_id if 'member_id' in locals() else None)
         return jsonify({'success': False, 'error': str(err)}), 500
+    except Exception as e:
+        logger.error(f"Error adding review: {e}")
+        log_api_action(db_config_g1, "AddReview", f"Review creation exception: {str(e)}", member_id if 'member_id' in locals() else None)
+        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         if 'cursor' in locals():
             cursor.close()
@@ -1178,14 +1332,8 @@ def add_review():
 @token_required
 def get_my_reviews():
     try:
-        token = request.headers.get('Authorization')
-        if not token or not token.startswith('Bearer '):
-            return jsonify({'error': 'Authorization token missing or malformed'}), 401
-
-        token = token.split(' ')[1]
-
-        decoded = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
-        member_id = decoded['user_id']
+        # Get authenticated user ID from token
+        member_id = request.user_id
 
         # Fetch reviews from reviews_ratings
         conn = get_db_connection(cims=False)
@@ -1210,6 +1358,9 @@ def get_my_reviews():
             if 'Timestamp' in review and review['Timestamp']:
                 review['Timestamp'] = review['Timestamp'].isoformat()
 
+        # Log successful reviews retrieval
+        log_api_action(db_config_g1, "GetMyReviews", f"Reviews retrieved for user {member_id} - {len(reviews)} reviews", member_id)
+
         return jsonify({
             'success': True,
             'reviews': reviews,
@@ -1217,12 +1368,19 @@ def get_my_reviews():
         }), 200
 
     except jwt.ExpiredSignatureError:
+        log_api_action(db_config_g1, "GetMyReviews", f"Reviews retrieval failed - token expired", None)
         return jsonify({'error': 'Token expired'}), 401
     except jwt.InvalidTokenError:
+        log_api_action(db_config_g1, "GetMyReviews", f"Reviews retrieval failed - invalid token", None)
         return jsonify({'error': 'Invalid token'}), 401
     except mysql.connector.Error as err:
-        print(f"Database error: {err}")
+        logger.error(f"Database error in get_my_reviews: {err}")
+        log_api_action(db_config_g1, "GetMyReviews", f"Reviews retrieval error: {str(err)}", member_id if 'member_id' in locals() else None)
         return jsonify({'success': False, 'error': str(err)}), 500
+    except Exception as e:
+        logger.error(f"Error getting reviews: {e}")
+        log_api_action(db_config_g1, "GetMyReviews", f"Reviews retrieval exception: {str(e)}", member_id if 'member_id' in locals() else None)
+        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         if 'cursor' in locals():
             cursor.close()
@@ -1263,6 +1421,9 @@ def get_my_listings():
             if 'Image_Data' in listing:
                 del listing['Image_Data']
 
+        # Log successful listings retrieval
+        log_api_action(db_config_g1, "GetMyListings", f"Listings retrieved for user {member_id} - {len(listings)} listings", member_id)
+
         return jsonify({
             'success': True,
             'listings': listings,
@@ -1270,10 +1431,12 @@ def get_my_listings():
         }), 200
 
     except mysql.connector.Error as err:
-        print(f"Database error: {err}")
+        logger.error(f"Database error in get_my_listings: {err}")
+        log_api_action(db_config_g1, "GetMyListings", f"Listings retrieval error: {str(err)}", member_id if 'member_id' in locals() else None)
         return jsonify({'success': False, 'error': str(err)}), 500
     except Exception as e:
-        print(f"Error getting listings: {e}")
+        logger.error(f"Error getting listings: {e}")
+        log_api_action(db_config_g1, "GetMyListings", f"Listings retrieval exception: {str(e)}", member_id if 'member_id' in locals() else None)
         return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         if 'cursor' in locals():
@@ -1287,29 +1450,26 @@ def get_my_listings():
 @token_required
 def get_my_credit_logs():
     try:
-        token = request.headers.get('Authorization')
-        if not token or not token.startswith('Bearer '):
-            return jsonify({'error': 'Authorization token missing or malformed'}), 401
-
-        token = token.split(' ')[1]
-
-        decoded = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
-        member_id = decoded['user_id']
+        # Get authenticated user ID from token
+        member_id = request.user_id
 
         # Get credit logs
         conn = get_db_connection(cims=False)
         cursor = conn.cursor(dictionary=True)
 
         query = """
-            SELECT 
-                credit_ID, 
-                member_ID, 
+            SELECT
+                credit_ID,
+                member_ID,
                 balance
             FROM credit_logs
             WHERE member_ID = %s
         """
         cursor.execute(query, (member_id,))
         credit_logs = cursor.fetchall()
+
+        # Log successful credit logs retrieval
+        log_api_action(db_config_g1, "GetMyCreditLogs", f"Credit logs retrieved for user {member_id} - {len(credit_logs)} logs", member_id)
 
         return jsonify({
             'success': True,
@@ -1318,12 +1478,19 @@ def get_my_credit_logs():
         }), 200
 
     except jwt.ExpiredSignatureError:
+        log_api_action(db_config_g1, "GetMyCreditLogs", f"Credit logs retrieval failed - token expired", None)
         return jsonify({'error': 'Token expired'}), 401
     except jwt.InvalidTokenError:
+        log_api_action(db_config_g1, "GetMyCreditLogs", f"Credit logs retrieval failed - invalid token", None)
         return jsonify({'error': 'Invalid token'}), 401
     except mysql.connector.Error as err:
-        print(f"Database error: {err}")
+        logger.error(f"Database error in get_my_credit_logs: {err}")
+        log_api_action(db_config_g1, "GetMyCreditLogs", f"Credit logs retrieval error: {str(err)}", member_id if 'member_id' in locals() else None)
         return jsonify({'success': False, 'error': str(err)}), 500
+    except Exception as e:
+        logger.error(f"Error getting credit logs: {e}")
+        log_api_action(db_config_g1, "GetMyCreditLogs", f"Credit logs retrieval exception: {str(e)}", member_id if 'member_id' in locals() else None)
+        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         if 'cursor' in locals():
             cursor.close()
@@ -1343,7 +1510,7 @@ def get_profile():
 
         # Get user info (excluding password)
         cursor.execute("""
-            SELECT 
+            SELECT
                 Member_ID, Name, Email, Contact_No,
                 Age, Role, Registered_On,
                 Profile_Image
@@ -1353,6 +1520,7 @@ def get_profile():
         profile_data = cursor.fetchone()
 
         if not profile_data:
+            log_api_action(db_config_g1, "GetProfile", f"Profile retrieval failed - user not found: {member_id}", member_id)
             return jsonify({'success': False, 'error': 'User not found'}), 404
 
         # Convert image to base64 if present
@@ -1382,13 +1550,22 @@ def get_profile():
         profile_data['productsSold'] = sold_count
         profile_data['productsBought'] = bought_count
 
+        # Log successful profile retrieval
+        log_api_action(db_config_g1, "GetProfile", f"Profile retrieved for user {member_id} - sold: {sold_count}, bought: {bought_count}", member_id)
+
         return jsonify({
             'success': True,
             'profile': profile_data
         }), 200
 
     except mysql.connector.Error as err:
+        logger.error(f"Database error in get_profile: {err}")
+        log_api_action(db_config_g1, "GetProfile", f"Profile retrieval error: {str(err)}", member_id if 'member_id' in locals() else None)
         return jsonify({'success': False, 'error': str(err)}), 500
+    except Exception as e:
+        logger.error(f"Error getting profile: {e}")
+        log_api_action(db_config_g1, "GetProfile", f"Profile retrieval exception: {str(e)}", member_id if 'member_id' in locals() else None)
+        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         if 'cursor' in locals():
             cursor.close()
@@ -1400,14 +1577,8 @@ def get_profile():
 @token_required
 def get_report_analytics():
     try:
-        token = request.headers.get('Authorization')
-        if not token or not token.startswith('Bearer '):
-            return jsonify({'error': 'Authorization token missing or malformed'}), 401
-
-        token = token.split(' ')[1]
-        decoded = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
-
-        # No need to extract user_id since we're not filtering
+        # Get authenticated user ID from token
+        member_id = request.user_id
 
         # Fetch all report analytics data
         conn = get_db_connection(cims=False)
@@ -1419,12 +1590,12 @@ def get_report_analytics():
         # Step 2: INSERT new report data
         insert_query = """
             INSERT INTO report_analytics (Report_Type)
-            SELECT 
+            SELECT
                 CONCAT('Seller ', Seller_ID, ': ', Total_Sales, ' sales, Revenue: Rs', Total_Revenue)
             FROM (
-                SELECT 
-                    Seller_ID, 
-                    COUNT(*) AS Total_Sales, 
+                SELECT
+                    Seller_ID,
+                    COUNT(*) AS Total_Sales,
                     SUM(Price) AS Total_Revenue
                 FROM transaction_listing
                 GROUP BY Seller_ID
@@ -1433,22 +1604,22 @@ def get_report_analytics():
         cursor.execute(insert_query)
         conn.commit()
 
-
         # Step 3: Fetch updated report data
         select_query = """
             SELECT * FROM report_analytics;
         """
-        # print("here")
         cursor.execute(select_query)
         report_data = cursor.fetchall()
-        print(report_data)
 
         conn2 = get_db_connection()
         cursor2 = conn2.cursor(dictionary=True)
 
-        cursor2.execute("INSERT INTO G1_report_analytics (Report_Type) VALUES (%s)", 
+        cursor2.execute("INSERT INTO G1_report_analytics (Report_Type) VALUES (%s)",
                 ("Seller Summary Report",))
         conn2.commit()
+
+        # Log report generation
+        log_api_action(db_config_g1, "GetReportAnalytics", f"Report analytics generated by user {member_id}", member_id)
 
         return jsonify({
             'success': True,
@@ -1457,12 +1628,19 @@ def get_report_analytics():
         }), 200
 
     except jwt.ExpiredSignatureError:
+        log_api_action(db_config_g1, "GetReportAnalytics", f"Report generation failed - token expired", None)
         return jsonify({'error': 'Token expired'}), 401
     except jwt.InvalidTokenError:
+        log_api_action(db_config_g1, "GetReportAnalytics", f"Report generation failed - invalid token", None)
         return jsonify({'error': 'Invalid token'}), 401
     except mysql.connector.Error as err:
-        print(f"Database error: {err}")
+        logger.error(f"Database error in get_report_analytics: {err}")
+        log_api_action(db_config_g1, "GetReportAnalytics", f"Report generation error: {str(err)}", member_id if 'member_id' in locals() else None)
         return jsonify({'success': False, 'error': str(err)}), 500
+    except Exception as e:
+        logger.error(f"Error generating reports: {e}")
+        log_api_action(db_config_g1, "GetReportAnalytics", f"Report generation exception: {str(e)}", member_id if 'member_id' in locals() else None)
+        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         if 'cursor' in locals():
             cursor.close()
