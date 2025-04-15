@@ -22,6 +22,7 @@ import TransactionHistory from './pages/MyTransactions';
 import MyReviews from './pages/Reviews';
 import Profile from './pages/Profile';
 import PrivateRoute from './components/PrivateRoute';
+import Members from './pages/Members';
 
 function App() {
   return (
@@ -44,6 +45,7 @@ function App() {
                 <Route path="/reports" element={<PrivateRoute element={<Reports />} />} />
                 <Route path="/getMyTransactions" element={<PrivateRoute element={<TransactionHistory />} />} />
                 <Route path="/profile" element={<PrivateRoute element={<Profile />} />} />
+                <Route path="/members" element={<PrivateRoute element={<Members />} />} />
               </Routes>
             </div>
           </main>
