@@ -1,6 +1,16 @@
 # CampusTrade
 The Campus Trading Application is designed to facilitate secure and efficient peer-to-peer trading within our institute. Students often resort to second-hand buying and selling of goods using social media platforms, which doesn't facilitate the live status of sale, making it an ineffective way of trading. This system enables students, faculty members and non-teaching staff members to list items for sale, browse available products and initiate and complete transactions on this virtual platform, much like a market. 
 
+## Setup
+
+Install Python and Node dependencies (check the README.md file in the frontend folder).
+
+Inside CampusTrade/backend, run:
+`python api.py`
+
+Inside CampusTrade/frontend, run:
+`npm start`
+
 ## Key Features:
 - User Management: Secure registration and login for students and staff, with detailed profiles maintained for all users.
 - Product Listings: Users can post items with descriptions, images, and pricing.
