@@ -29,7 +29,7 @@ The database consists of 10 tables:
 - reviews_ratings - Stores user reviews and ratings
 - report_analytics - Stores platform-generated reports
 - complaints - Stores user complaints
-- searches - Logs user search queries
+- api-logs - To log all actions
 
 ## Technology Stack:
 - Backend: Flask (Python)
