@@ -2,8 +2,6 @@ from flask import Flask, request, jsonify
 import mysql.connector
 import hashlib
 from functools import wraps
-import base64
-import mysql.connector
 # import Login
 import logging
 
@@ -141,7 +139,7 @@ def add_member():
         """
         cursor.execute(insert_member, (username, email, dob))
         conn.commit()
-
+        
         # 2. Get the new member's ID
         member_id = cursor.lastrowid
 
@@ -258,7 +256,7 @@ def login():
         # Fetch MemberID from members table using the username
         cursor.execute("SELECT ID FROM members WHERE UserName = %s", (username,))
         member = cursor.fetchone()
-
+        
         if not member:
             return jsonify({'error': 'User not found'}), 404
 
@@ -296,170 +294,29 @@ def login():
             conn.close()
 
 
-@app.route('/addToWishlist', methods=['POST'])
-@token_required
-def add_to_wishlist():
-    try:
-        # Get authenticated user ID from token
-        member_id = request.user_id
-
-        # Get data from request
-        data = request.get_json()
-        if 'product_id' not in data:
-            return jsonify({'success': False, 'error': 'Missing required field: product_id'}), 400
-
-        product_id = data['product_id']
-
-        # Connect to database
-        conn = get_db_connection(cims=False)
-        cursor = conn.cursor()
-
-        # Optional: Check if the product exists
-        cursor.execute("SELECT Product_ID FROM product_listing WHERE Product_ID = %s", (product_id,))
-        if cursor.fetchone() is None:
-            return jsonify({'success': False, 'error': 'Product not found'}), 404
-
-        # Check if it's already in the wishlist
-        cursor.execute("""
-            SELECT * FROM wishlist WHERE Member_ID = %s AND Product_ID = %s
-        """, (member_id, product_id))
-        if cursor.fetchone():
-            return jsonify({'success': False, 'message': 'Product is already in wishlist'}), 200
-
-        # Insert into wishlist
-        cursor.execute("""
-            INSERT INTO wishlist (Member_ID, Product_ID) VALUES (%s, %s)
-        """, (member_id, product_id))
-        conn.commit()
-
-        return jsonify({
-            'success': True,
-            'message': 'Product added to wishlist'
-        }), 201
-
-    except mysql.connector.Error as err:
-        print(f"Database error: {err}")
-        return jsonify({'success': False, 'error': str(err)}), 500
-    except Exception as e:
-        print(f"Error adding to wishlist: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-    finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if 'conn' in locals():
-            conn.close()
-
-@app.route('/deletefromwishlist', methods=['DELETE'])
-@token_required
-def delete_product_wishlist():
-    try:
-        # Get authenticated user ID from token
-        member_id = request.user_id
-
-        # Get data from request
-        data = request.get_json()
-        if not data or 'Product_ID' not in data:
-            return jsonify({'success': False, 'error': 'Missing required field: Product_ID'}), 400
-
-        product_id = data['Product_ID']
-
-        # Connect to database
-        conn = get_db_connection(cims=False)
-        cursor = conn.cursor()
-
-        # Check if the product exists in wishlist for the user
-        cursor.execute("""
-            SELECT * FROM wishlist WHERE Member_ID = %s AND Product_ID = %s
-        """, (member_id, product_id))
-        if cursor.fetchone() is None:
-            return jsonify({'success': False, 'message': 'Product not found in wishlist'}), 404
-
-        # Delete the product from wishlist
-        cursor.execute("""
-            DELETE FROM wishlist WHERE Member_ID = %s AND Product_ID = %s
-        """, (member_id, product_id))
-        conn.commit()
-
-        return jsonify({
-            'success': True,
-            'message': 'Product removed from wishlist'
-        }), 200
-
-    except mysql.connector.Error as err:
-        print(f"Database error: {err}")
-        return jsonify({'success': False, 'error': str(err)}), 500
-    except Exception as e:
-        print(f"Error deleting from wishlist: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-    finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if 'conn' in locals():
-            conn.close()
-
-
 @app.route('/getWishlist', methods=['GET'])
-@token_required
-def get_wishlist():
+@token_required  # Protect the route with the token_required decorator
+def get_wishlist(user_id):
     try:
-        # Get authenticated user ID from token
-        member_id = request.user_id
+        conn = mysql.connector.connect(**db_config_g1)
+        cursor = conn.cursor()
 
-        # Connect to database
-        conn = get_db_connection(cims=False)
-        cursor = conn.cursor(dictionary=True)
-
-        # Fetch wishlist items for the authenticated user
-        cursor.execute("""
-            SELECT p.Product_ID, p.Title, p.Description, p.Price, p.Category_ID, p.Condition_, p.Image_Data
-            FROM wishlist w
-            JOIN product_listing p ON w.Product_ID = p.Product_ID
-            WHERE w.Member_ID = %s
-        """, (member_id,))
-
+        # Query the wishlist for the authenticated user
+        cursor.execute("SELECT * FROM Wishlist WHERE user_id = %s", (user_id,))
         wishlist_items = cursor.fetchall()
 
         if not wishlist_items:
-            return jsonify({'success': False, 'message': 'Your wishlist is empty'}), 200
+            return jsonify({'message': 'No items found in wishlist'}), 404
 
-        # Format response
-        wishlist_data = []
-        for item in wishlist_items:
-            product = {
-                'Product_ID': item['Product_ID'],
-                'Title': item['Title'],
-                'Description': item['Description'],
-                'Price': item['Price'],
-                'Category_ID': item['Category_ID'],
-                'Condition_': item['Condition_']
-            }
-
-            # Handle image conversion
-            if item.get('Image_Data'):
-                encoded_image = base64.b64encode(item['Image_Data']).decode('utf-8')
-                product['image'] = f"data:image/jpeg;base64,{encoded_image}"
-            else:
-                product['image'] = ""
-
-            wishlist_data.append(product)
-
-        return jsonify({
-            'success': True,
-            'wishlist': wishlist_data
-        }), 200
+        return jsonify({'wishlist': wishlist_items}), 200
 
     except mysql.connector.Error as err:
         print(f"Database error: {err}")
-        return jsonify({'success': False, 'error': str(err)}), 500
-    except Exception as e:
-        print(f"Error getting wishlist: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-    finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if 'conn' in locals():
-            conn.close()
+        return jsonify({'error': str(err)}), 500
 
+    finally:
+        cursor.close()
+        conn.close()
 
 
 # To Do: Cascade delete from all tables
@@ -544,78 +401,49 @@ def delete_member():
             conn2.close()
 
 
-
-import base64
-import mysql.connector
-from flask import request, jsonify
-from functools import wraps
-
-# Assuming 'get_db_connection' and 'token_required' are defined elsewhere
-
 @app.route('/addProduct', methods=['POST'])
-@token_required
 def add_product():
+   
+    print(request)
+    data = request.get_json()
+    print("jang")
+    print(data)
+
+    required_fields = ['seller_id', 'title', 'description', 'price', 'category_id', 'condition']
+    for field in required_fields:
+        if field not in data:
+            return jsonify({'error': f'Missing required field: {field}'}), 400
+
+
+    seller_id = data['seller_id']
+    title = data['title']
+    description = data['description']
+    price = data['price']
+    category_id = data['category_id']
+    condition = data['condition']
+    image_url = data['image_url']
+
     try:
-        # Get authenticated user ID from token
-        member_id = request.user_id
-
-        # Get data from request
-        data = request.get_json()
-
-        # Check required fields
-        required_fields = ['title', 'description', 'price', 'category_id', 'condition']
-        for field in required_fields:
-            if field not in data:
-                return jsonify({'success': False, 'error': f'Missing required field: {field}'}), 400
-
-        # Extract data
-        title = data['title']
-        description = data['description']
-        price = data['price']
-        category_id = data['category_id']
-        condition = data['condition']
-        
-        # Optional: Handle base64-encoded image if it's included
-        image_data = None
-        if 'image' in data:
-            image_base64 = data['image']
-            # Decode the base64 string into binary
-            image_data = base64.b64decode(image_base64.split(',')[1])  # Remove the "data:image/jpeg;base64," part if present
-
-        # Connect to database
         conn = get_db_connection(cims=False)
         cursor = conn.cursor()
 
-        # Insert product with or without the image
         query = """
-            INSERT INTO product_listing (Seller_ID, Title, Description, Price, Category_ID, Condition_, Image_Data)
+            INSERT INTO product_listing (Seller_ID, Title, Description, Price, Category_ID, Condition_, Image_URL)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
-        cursor.execute(query, (member_id, title, description, price, category_id, condition, image_data))
+        cursor.execute(query, (seller_id, title, description, price, category_id, condition, image_url))
+        
         conn.commit()
 
-        # Get the ID of the newly inserted product
-        product_id = cursor.lastrowid
+        return jsonify({'message': 'Product listed successfully'}), 201
 
-        return jsonify({
-            'success': True,
-            'message': 'Product listed successfully',
-            'product_id': product_id
-        }), 201
-
-    except mysql.connector.Error as err:
-        print(f"Database error: {err}")
-        return jsonify({'success': False, 'error': str(err)}), 500
     except Exception as e:
-        print(f"Error adding product: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+
+        return jsonify({'error': str(e)}), 500
+
     finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if 'conn' in locals():
-            conn.close()
-
-
+        cursor.close()
+        conn.close()
 
 
 
@@ -624,7 +452,7 @@ def get_categories():
     try:
         conn = get_db_connection(cims=False)
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM category")
+        cursor.execute("SELECT * FROM category") 
         categories = cursor.fetchall()
         print(categories)
         return jsonify({'categories': categories}), 200
@@ -635,53 +463,24 @@ def get_categories():
         conn.close()
 
 
+# Get All Products endpoint
 @app.route('/getProducts', methods=['GET'])
 @token_required
 def get_products():
     try:
-        # Get authenticated user ID from token
-        member_id = request.user_id
-
-        # Connect to database
-        conn = get_db_connection(cims=False)
-        cursor = conn.cursor(dictionary=True)
-
-        # Query to get products not listed by the current user
-        cursor.execute("SELECT * FROM product_listing WHERE Seller_ID != %s", (member_id,))
-        products = cursor.fetchall()
-
-        # Process each product entry
-        for product in products:
-            for key, value in list(product.items()):
-                if isinstance(value, (datetime.date, datetime.datetime)):
-                    product[key] = value.isoformat()
-
-            # Handle image processing
-            if product.get('Image_Data'):
-                image_data = product['Image_Data']
-                encoded_image = base64.b64encode(image_data).decode('utf-8')
-                product['image'] = f"data:image/jpeg;base64,{encoded_image}"
-            else:
-                product['image'] = ""
-
-            # Remove raw image data field from response
-            if 'Image_Data' in product:
-                del product['Image_Data']
+        conn2 = get_db_connection(cims=False)
+        cursor2 = conn2.cursor(dictionary=True)
+        cursor2.execute("SELECT * FROM product_listing")
+        products = cursor2.fetchall()
 
         return jsonify({'products': products}), 200
-
-    except mysql.connector.Error as err:
-        print(f"Database error: {err}")
-        return jsonify({'error': str(err)}), 500
     except Exception as e:
-        print(f"Error getting products: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if 'conn' in locals():
-            conn.close()
-
+        if 'cursor2' in locals():
+            cursor2.close()
+        if 'conn2' in locals():
+            conn2.close()
 
 # Get Product by ID endpoint
 @app.route('/getProduct/<int:product_id>', methods=['GET'])
@@ -732,41 +531,37 @@ def update_product(product_id):
 
 # Delete Product endpoint
 @app.route('/deleteProduct/<int:product_id>', methods=['DELETE'])
-@token_required
 def delete_product(product_id):
     try:
-        # Get authenticated user ID from token
-        member_id = request.user_id
-
         conn = get_db_connection(cims=False)
-        cursor = conn.cursor(dictionary=True)
-
-        # First check if the product belongs to the authenticated user
-        cursor.execute("SELECT Seller_ID FROM product_listing WHERE Product_ID = %s", (product_id,))
-        product = cursor.fetchone()
-
-        if not product:
-            return jsonify({'success': False, 'error': 'Product not found'}), 404
-
-        if str(product['Seller_ID']) != str(member_id):
-            return jsonify({'success': False, 'error': 'You are not authorized to delete this product'}), 403
+        cursor = conn.cursor()
 
         # Delete product from the product_listing table
         cursor.execute("DELETE FROM product_listing WHERE Product_ID = %s", (product_id,))
         conn.commit()
 
-        return jsonify({'success': True, 'message': 'Product deleted successfully'}), 200
-    except mysql.connector.Error as err:
-        print(f"Database error: {err}")
-        return jsonify({'success': False, 'error': str(err)}), 500
+        return jsonify({'message': 'Product deleted successfully'}), 200
     except Exception as e:
-        print(f"Error deleting product: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'error': str(e)}), 500
     finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if 'conn' in locals():
-            conn.close()
+        cursor.close()
+        conn.close()
+
+@app.route('/addToWishlist', methods=['POST'])
+def add_to_wishlist():
+    data = request.get_json()
+    try:
+        conn = get_db_connection(cims=False)
+        cursor = conn.cursor()
+        query = "INSERT INTO wishlist (Member_ID, Product_ID) VALUES (%s, %s)"
+        cursor.execute(query, (data['member_id'], data['product_id']))
+        conn.commit()
+        return jsonify({'message': 'Added to wishlist'}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
 
 @app.route('/addComplaint', methods=['POST'])
 @token_required
@@ -806,7 +601,7 @@ def add_complaint():
     except mysql.connector.Error as err:
         print("Database error:", err)
         return jsonify({'success': False, 'error': str(err)}), 500
-
+        
     finally:
         if 'cursor' in locals():
             cursor.close()
@@ -901,67 +696,6 @@ def toggle_complaint_status():
         if 'conn' in locals():
             conn.close()
 
-@app.route('/viewGroupMembers', methods=['GET'])
-@token_required
-def view_group_members():
-    try:
-        conn = get_db_connection(cims=False)
-        cursor = conn.cursor(dictionary=True)
-
-        # Select only non-sensitive fields
-        cursor.execute("""
-            SELECT 
-                Member_ID, Name, Email, Contact_No, Age, Role, Registered_On
-            FROM 
-                memberExt
-        """)
-        members = cursor.fetchall()
-
-        return jsonify({'success': True, 'members': members}), 200
-
-    except mysql.connector.Error as err:
-        return jsonify({'success': False, 'error': str(err)}), 500
-    finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if 'conn' in locals():
-            conn.close()
-
-@app.route('/getMemberListing', methods=['POST'])
-@token_required
-def get_member_listing():
-    try:
-        data = request.get_json()
-        member_id = data.get('member_id')
-
-        if not member_id:
-            return jsonify({'success': False, 'error': 'member_id is required'}), 400
-
-        conn = get_db_connection(cims=False)
-        cursor = conn.cursor(dictionary=True)
-
-        # Corrected query with backticks around Condition alias
-        cursor.execute("""
-            SELECT 
-                Product_ID, Title, Description, Price,
-                Category_ID, Condition_ AS `Condition`,
-                Image_URL, Listed_On
-            FROM product_listing
-            WHERE Seller_ID = %s
-        """, (member_id,))
-        
-        listings = cursor.fetchall()
-
-        return jsonify({'success': True, 'listings': listings}), 200
-
-    except mysql.connector.Error as err:
-        return jsonify({'success': False, 'error': str(err)}), 500
-    finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if 'conn' in locals():
-            conn.close()
-
 @app.route('/buyProduct', methods=['POST'])
 @token_required
 def buy_product():
@@ -974,7 +708,7 @@ def buy_product():
 
         decoded = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
         member_id = decoded['user_id']
-
+        
         conn2 = get_db_connection(cims=False)
         cursor2 = conn2.cursor(dictionary=True)
 
@@ -986,7 +720,7 @@ def buy_product():
 
         if not product_id:
             return jsonify({'error': 'Product_ID is required'}), 400
-
+        
         # Get Seller_ID and price from product_listing table
         cursor2.execute("SELECT Seller_ID, Price, Title FROM product_listing WHERE Product_ID = %s", (product_id,))
         product_details = cursor2.fetchone()
@@ -1040,9 +774,9 @@ def buy_product():
         # Delete from wishlist if it exists
         cursor2.execute("DELETE FROM wishlist WHERE Member_ID = %s AND Product_ID = %s", (member_id, product_id))
         conn2.commit()
-
+        
         return jsonify({'success': True, 'message': 'Product purchased and removed successfully'}), 200
-
+    
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -1065,38 +799,38 @@ def get_my_transactions():
 
         decoded = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
         member_id = decoded['user_id']
-
+            
         # Get transactions
         conn = get_db_connection(cims=False)
         cursor = conn.cursor(dictionary=True)
-
+        
         query = """
-            SELECT
-                Transaction_ID,
-                Buyer_ID,
-                Seller_ID,
-                Title,
-                Price,
-                Payment_Method,
-                Transaction_Date
+            SELECT 
+                Transaction_ID, 
+                Buyer_ID, 
+                Seller_ID, 
+                Title, 
+                Price, 
+                Payment_Method, 
+                Transaction_Date 
             FROM transaction_listing
             WHERE Buyer_ID = %s OR Seller_ID = %s
             ORDER BY Transaction_Date DESC
         """
         cursor.execute(query, (member_id, member_id))
         transactions = cursor.fetchall()
-
+        
         # Convert datetime objects to string to make them JSON serializable
         for transaction in transactions:
             if 'Transaction_Date' in transaction and transaction['Transaction_Date']:
                 transaction['Transaction_Date'] = transaction['Transaction_Date'].isoformat()
-
+        
         return jsonify({
             'success': True,
             'transactions': transactions,
             'count': len(transactions)
         }), 200
-
+        
     except jwt.ExpiredSignatureError:
         return jsonify({'error': 'Token expired'}), 401
     except jwt.InvalidTokenError:
@@ -1133,7 +867,7 @@ def add_review():
 
         if not reviewed_user_id or not rating:
             return jsonify({'error': 'Missing required fields'}), 400
-
+        
         # Insert review
         conn = get_db_connection(cims=False)
         cursor = conn.cursor()
@@ -1178,7 +912,7 @@ def get_my_reviews():
         conn = get_db_connection(cims=False)
         cursor = conn.cursor(dictionary=True)
         query = """
-            SELECT
+            SELECT 
                 Review_ID,
                 Reviewer_ID,
                 Reviewed_User_ID,
@@ -1216,59 +950,125 @@ def get_my_reviews():
         if 'conn' in locals():
             conn.close()
 
-@app.route('/myListings', methods=['GET'])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# view credit logs:
+@app.route('/getMyCreditLogs', methods=['GET'])
 @token_required
-def get_my_listings():
+def get_my_credit_logs():
     try:
-        member_id = request.user_id
+        token = request.headers.get('Authorization')
+        if not token or not token.startswith('Bearer '):
+            return jsonify({'error': 'Authorization token missing or malformed'}), 401
+
+        token = token.split(' ')[1]
+
+        decoded = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+        member_id = decoded['user_id']
+
+        # Get credit logs
         conn = get_db_connection(cims=False)
         cursor = conn.cursor(dictionary=True)
 
         query = """
-            SELECT * FROM product_listing
-            WHERE Seller_ID = %s
-            ORDER BY Product_ID DESC
+            SELECT 
+                credit_ID, 
+                member_ID, 
+                balance
+            FROM credit_logs
+            WHERE member_ID = %s
         """
         cursor.execute(query, (member_id,))
-        listings = cursor.fetchall()
-
-        for listing in listings:
-            # Handle datetime fields
-            for key, value in listing.items():
-                if isinstance(value, (datetime.date, datetime.datetime)):
-                    listing[key] = value.isoformat()
-
-            # Handle image
-            image_data = listing.get('Image_Data')
-            if image_data:
-                encoded_image = base64.b64encode(image_data).decode('utf-8')
-                listing['image'] = f"data:image/jpeg;base64,{encoded_image}"
-            else:
-                listing['image'] = ""
-
-            # Remove raw binary field
-            if 'Image_Data' in listing:
-                del listing['Image_Data']
+        credit_logs = cursor.fetchall()
 
         return jsonify({
             'success': True,
-            'listings': listings,
-            'count': len(listings)
+            'credit_logs': credit_logs,
+            'count': len(credit_logs)
         }), 200
 
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Token expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
     except mysql.connector.Error as err:
         print(f"Database error: {err}")
         return jsonify({'success': False, 'error': str(err)}), 500
-    except Exception as e:
-        print(f"Error getting listings: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         if 'cursor' in locals():
             cursor.close()
         if 'conn' in locals():
             conn.close()
 
+# view report analytics:
+@app.route('/getReportAnalytics', methods=['GET'])
+@token_required
+def get_report_analytics():
+    try:
+        token = request.headers.get('Authorization')
+        if not token or not token.startswith('Bearer '):
+            return jsonify({'error': 'Authorization token missing or malformed'}), 401
 
+        token = token.split(' ')[1]
+        decoded = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+
+        # No need to extract user_id since we're not filtering
+
+        # Fetch all report analytics data
+        conn = get_db_connection(cims=False)
+        cursor = conn.cursor(dictionary=True)
+
+        query = """
+            SELECT 
+                Report_ID, 
+                Report_Type, 
+                Generated_On
+            FROM report_analytics
+        """
+        cursor.execute(query)
+        report_data = cursor.fetchall()
+
+        return jsonify({
+            'success': True,
+            'report_analytics': report_data,
+            'count': len(report_data)
+        }), 200
+
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Token expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+    except mysql.connector.Error as err:
+        print(f"Database error: {err}")
+        return jsonify({'success': False, 'error': str(err)}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
 
 if __name__ == '__main__':
     # conn = mysql.connector.connect(**db_config)

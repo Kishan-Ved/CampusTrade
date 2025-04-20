@@ -1,0 +1,29 @@
+[
+  {
+    "Product_ID": 1,
+    "Seller_ID": 1,
+    "Title": "Laptop",
+    "Description": "Used MacBook Pro, 16GB RAM, 512GB SSD",
+    "Price": 800.0,
+    "Category_ID": 1,
+    "Condition_": "Used"
+  },
+  {
+    "Product_ID": 2,
+    "Seller_ID": 2,
+    "Title": "Python Programming Book",
+    "Description": "Learn Python from scratch",
+    "Price": 20.0,
+    "Category_ID": 2,
+    "Condition_": "New"
+  },
+  {
+    "Product_ID": 3,
+    "Seller_ID": 3,
+    "Title": "Study Table",
+    "Description": "Wooden study table with drawer",
+    "Price": 50.0,
+    "Category_ID": 3,
+    "Condition_": "Used"
+  }
+]

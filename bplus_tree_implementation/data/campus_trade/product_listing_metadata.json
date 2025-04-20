@@ -1,0 +1,43 @@
+{
+  "name": "product_listing",
+  "schema": {
+    "Product_ID": {
+      "type": "int",
+      "primary_key": true
+    },
+    "Seller_ID": {
+      "type": "int",
+      "nullable": false
+    },
+    "Title": {
+      "type": "string",
+      "nullable": false
+    },
+    "Description": {
+      "type": "string",
+      "nullable": false
+    },
+    "Price": {
+      "type": "float",
+      "nullable": false
+    },
+    "Category_ID": {
+      "type": "int",
+      "nullable": false
+    },
+    "Condition_": {
+      "type": "string",
+      "nullable": false
+    },
+    "Image_URL": {
+      "type": "string",
+      "nullable": true
+    },
+    "Listed_On": {
+      "type": "timestamp",
+      "nullable": true
+    }
+  },
+  "primary_key": "Product_ID",
+  "order": 5
+}

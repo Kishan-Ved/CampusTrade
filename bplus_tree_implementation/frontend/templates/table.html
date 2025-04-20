@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ table.name }} - B+ Tree Database</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container mt-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ table.name }}</li>
+            </ol>
+        </nav>
+        
+        <h1 class="mb-4">{{ table.name }}</h1>
+        
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="row">
+            <!-- Table Operations -->
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2>Insert Row</h2>
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ url_for('insert_row', name=table.name) }}" method="post">
+                            <div class="mb-3">
+                                <label for="insert-row" class="form-label">Row Data (JSON)</label>
+                                <textarea class="form-control" id="insert-row" name="row" rows="5" required></textarea>
+                                <small class="form-text text-muted">
+                                    Example: {"id": 1, "name": "John Doe"}
+                                </small>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Insert</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2>Delete Row</h2>
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ url_for('delete_row', name=table.name) }}" method="post">
+                            <div class="mb-3">
+                                <label for="delete-primary-key" class="form-label">Primary Key</label>
+                                <input type="text" class="form-control" id="delete-primary-key" name="primary_key" required>
+                            </div>
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2>Update Row</h2>
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ url_for('update_row', name=table.name) }}" method="post">
+                            <div class="mb-3">
+                                <label for="update-primary-key" class="form-label">Primary Key</label>
+                                <input type="text" class="form-control" id="update-primary-key" name="primary_key" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="update-set" class="form-label">Set Values (JSON)</label>
+                                <textarea class="form-control" id="update-set" name="set" rows="5" required></textarea>
+                                <small class="form-text text-muted">
+                                    Example: {"name": "Jane Doe"}
+                                </small>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Update</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Search Operations -->
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2>Search</h2>
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ url_for('search_table', name=table.name) }}" method="post">
+                            <div class="mb-3">
+                                <label for="search-column" class="form-label">Column</label>
+                                <select class="form-select" id="search-column" name="column" required>
+                                    {% for column in table.schema %}
+                                        <option value="{{ column }}">{{ column }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="search-value" class="form-label">Value</label>
+                                <input type="text" class="form-control" id="search-value" name="value" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Search</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2>Range Search</h2>
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ url_for('range_search_table', name=table.name) }}" method="post">
+                            <div class="mb-3">
+                                <label for="range-column" class="form-label">Column</label>
+                                <select class="form-select" id="range-column" name="column" required>
+                                    {% for column in table.schema %}
+                                        <option value="{{ column }}">{{ column }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="range-start" class="form-label">Start Value</label>
+                                <input type="text" class="form-control" id="range-start" name="start_value" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="range-end" class="form-label">End Value</label>
+                                <input type="text" class="form-control" id="range-end" name="end_value" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Search</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Index Operations -->
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2>Create Index</h2>
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ url_for('create_index', name=table.name) }}" method="post">
+                            <div class="mb-3">
+                                <label for="create-index-column" class="form-label">Column</label>
+                                <select class="form-select" id="create-index-column" name="column" required>
+                                    {% for column in table.schema %}
+                                        {% if column not in table.indices %}
+                                            <option value="{{ column }}">{{ column }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Create Index</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2>Drop Index</h2>
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ url_for('drop_index', name=table.name) }}" method="post">
+                            <div class="mb-3">
+                                <label for="drop-index-column" class="form-label">Column</label>
+                                <select class="form-select" id="drop-index-column" name="column" required>
+                                    {% for column in table.indices %}
+                                        {% if column != table.primary_key %}
+                                            <option value="{{ column }}">{{ column }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-danger">Drop Index</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2>Visualize Index</h2>
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ url_for('visualize_index', name=table.name) }}" method="post">
+                            <div class="mb-3">
+                                <label for="visualize-index-column" class="form-label">Column</label>
+                                <select class="form-select" id="visualize-index-column" name="column" required>
+                                    {% for column in table.indices %}
+                                        <option value="{{ column }}">{{ column }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Visualize</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Table Data -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2>{{ 'Search Results' if search else 'Data' }}</h2>
+            </div>
+            <div class="card-body">
+                {% if rows %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    {% for column in table.schema %}
+                                        <th>{{ column }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in rows %}
+                                    <tr>
+                                        {% for column in table.schema %}
+                                            <td>{{ row.get(column, '') }}</td>
+                                        {% endfor %}
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p>No data found.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Schema Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2>Schema</h2>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Column</th>
+                                <th>Type</th>
+                                <th>Primary Key</th>
+                                <th>Nullable</th>
+                                <th>Indexed</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for column, properties in table.schema.items() %}
+                                <tr>
+                                    <td>{{ column }}</td>
+                                    <td>{{ properties.get('type', '') }}</td>
+                                    <td>{{ 'Yes' if properties.get('primary_key', False) else 'No' }}</td>
+                                    <td>{{ 'Yes' if properties.get('nullable', False) else 'No' }}</td>
+                                    <td>{{ 'Yes' if column in table.indices else 'No' }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

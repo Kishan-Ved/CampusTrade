@@ -1,0 +1,14 @@
+{
+  "name": "jiya1",
+  "schema": {
+    "id": {
+      "type": "int",
+      "primary_key": true
+    },
+    "name": {
+      "type": "string"
+    }
+  },
+  "primary_key": "id",
+  "order": 5
+}

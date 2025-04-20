@@ -1,0 +1,29 @@
+[
+  {
+    "Member_ID": 1,
+    "Name": "Alice Johnson",
+    "Email": "alice@example.com",
+    "Password": "hashedpassword1",
+    "Contact_No": "9876543210",
+    "Age": 22,
+    "Role": "Student"
+  },
+  {
+    "Member_ID": 2,
+    "Name": "Bob Smith",
+    "Email": "bob@example.com",
+    "Password": "hashedpassword2",
+    "Contact_No": "9876543211",
+    "Age": 35,
+    "Role": "Faculty"
+  },
+  {
+    "Member_ID": 3,
+    "Name": "Charlie Brown",
+    "Email": "charlie@example.com",
+    "Password": "hashedpassword3",
+    "Contact_No": "9876543212",
+    "Age": 28,
+    "Role": "Staff"
+  }
+]

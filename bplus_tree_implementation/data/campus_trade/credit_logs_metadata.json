@@ -1,0 +1,19 @@
+{
+  "name": "credit_logs",
+  "schema": {
+    "Credit_ID": {
+      "type": "int",
+      "primary_key": true
+    },
+    "Member_ID": {
+      "type": "int",
+      "nullable": false
+    },
+    "Balance": {
+      "type": "float",
+      "nullable": false
+    }
+  },
+  "primary_key": "Credit_ID",
+  "order": 5
+}
