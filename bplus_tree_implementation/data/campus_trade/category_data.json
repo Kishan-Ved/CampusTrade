@@ -1,0 +1,14 @@
+[
+  {
+    "Category_ID": 1,
+    "Category_Name": "Electronics"
+  },
+  {
+    "Category_ID": 2,
+    "Category_Name": "Books"
+  },
+  {
+    "Category_ID": 3,
+    "Category_Name": "Furniture"
+  }
+]

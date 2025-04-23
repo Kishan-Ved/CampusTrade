@@ -1,0 +1,15 @@
+{
+  "name": "category",
+  "schema": {
+    "Category_ID": {
+      "type": "int",
+      "primary_key": true
+    },
+    "Category_Name": {
+      "type": "string",
+      "nullable": false
+    }
+  },
+  "primary_key": "Category_ID",
+  "order": 5
+}

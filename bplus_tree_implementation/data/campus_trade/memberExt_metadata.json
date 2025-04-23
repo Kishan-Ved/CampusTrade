@@ -1,0 +1,43 @@
+{
+  "name": "memberExt",
+  "schema": {
+    "Member_ID": {
+      "type": "int",
+      "primary_key": true
+    },
+    "Name": {
+      "type": "string",
+      "nullable": false
+    },
+    "Email": {
+      "type": "string",
+      "nullable": false
+    },
+    "Password": {
+      "type": "string",
+      "nullable": false
+    },
+    "Contact_No": {
+      "type": "string",
+      "nullable": false
+    },
+    "Age": {
+      "type": "int",
+      "nullable": false
+    },
+    "Profile_Image": {
+      "type": "blob",
+      "nullable": true
+    },
+    "Role": {
+      "type": "string",
+      "nullable": false
+    },
+    "Registered_On": {
+      "type": "timestamp",
+      "nullable": true
+    }
+  },
+  "primary_key": "Member_ID",
+  "order": 5
+}

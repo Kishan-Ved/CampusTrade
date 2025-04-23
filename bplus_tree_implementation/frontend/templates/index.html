@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B+ Tree Database</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4">B+ Tree Database Management System</h1>
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row">
+            <!-- Database Operations -->
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2>Database Operations</h2>
+                    </div>
+                    <div class="card-body">
+                        <h3>Create Database</h3>
+                        <form action="{{ url_for('create_database') }}" method="post" class="mb-3">
+                            <div class="mb-3">
+                                <label for="db-name" class="form-label">Database Name</label>
+                                <input type="text" class="form-control" id="db-name" name="name" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Create</button>
+                        </form>
+
+                        <h3>Load Database</h3>
+                        <form action="{{ url_for('load_database') }}" method="post" class="mb-3">
+                            <div class="mb-3">
+                                <label for="load-db-name" class="form-label">Database Name</label>
+                                <select class="form-select" id="load-db-name" name="name" required>
+                                    <option value="">Select a database</option>
+                                    {% for db_name in available_databases %}
+                                        <option value="{{ db_name }}">{{ db_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Load</button>
+                        </form>
+
+                        <h3>Save Database</h3>
+                        <form action="{{ url_for('save_database') }}" method="post">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Operations -->
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2>Table Operations</h2>
+                    </div>
+                    <div class="card-body">
+                        <h3>Create Table</h3>
+                        <form action="{{ url_for('create_table') }}" method="post" class="mb-3">
+                            <div class="mb-3">
+                                <label for="table-name" class="form-label">Table Name</label>
+                                <input type="text" class="form-control" id="table-name" name="name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="table-schema" class="form-label">Schema (JSON)</label>
+                                <textarea class="form-control" id="table-schema" name="schema" rows="5" required></textarea>
+                                <small class="form-text text-muted">
+                                    Example: {"id": {"type": "int", "primary_key": true}, "name": {"type": "string"}}
+                                </small>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Create</button>
+                        </form>
+
+                        <h3>Drop Table</h3>
+                        <form action="{{ url_for('drop_table') }}" method="post">
+                            <div class="mb-3">
+                                <label for="drop-table-name" class="form-label">Table Name</label>
+                                <select class="form-select" id="drop-table-name" name="name" required>
+                                    <option value="">Select a table</option>
+                                    {% for table in tables %}
+                                        <option value="{{ table }}">{{ table }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-danger">Drop</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tables List -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2>Tables</h2>
+            </div>
+            <div class="card-body">
+                {% if tables %}
+                    <div class="list-group">
+                        {% for table in tables %}
+                            <a href="{{ url_for('view_table', name=table) }}" class="list-group-item list-group-item-action">
+                                {{ table }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p>No tables found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+{
+  "name": "transaction_listing",
+  "schema": {
+    "Transaction_ID": {
+      "type": "int",
+      "primary_key": true
+    },
+    "Buyer_ID": {
+      "type": "int",
+      "nullable": false
+    },
+    "Seller_ID": {
+      "type": "int",
+      "nullable": false
+    },
+    "Title": {
+      "type": "string",
+      "nullable": false
+    },
+    "Price": {
+      "type": "float",
+      "nullable": false
+    },
+    "Payment_Method": {
+      "type": "string",
+      "nullable": false
+    },
+    "Transaction_Date": {
+      "type": "timestamp",
+      "nullable": true
+    }
+  },
+  "primary_key": "Transaction_ID",
+  "order": 5
+}

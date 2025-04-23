@@ -1,0 +1,10 @@
+{
+  "name": "campus_trade",
+  "tables": [
+    "memberExt",
+    "category",
+    "product_listing",
+    "transaction_listing",
+    "credit_logs"
+  ]
+}
