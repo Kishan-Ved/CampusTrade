@@ -1,6 +1,6 @@
 # B+ Tree Database Implementation
 
-This project implements a lightweight database management system (DBMS) in Python that uses a B+ Tree for indexing and supports core database operations like insert, update, delete, select, aggregation, and range queries.
+We craeted a lightweight database management system (DBMS) in Python that uses a B+ Tree for indexing and supports core database operations like insert, update, delete, select, aggregation, and range queries. We tested it on the same database design for our original project (CampusTrade).
 
 ## Features
 
@@ -8,6 +8,7 @@ This project implements a lightweight database management system (DBMS) in Pytho
 - Database class for managing tables and operations
 - Table class for handling table operations with B+ Tree indexing
 - BruteForceDB implementation for performance comparison
+- Persistence storage in JSON files
 - Benchmarking utilities for measuring time and memory usage
 - Visualization of B+ Tree structure using Graphviz
 - Web-based UI for interacting with the database
@@ -29,8 +30,6 @@ bplus_tree_implementation/
 │   ├── app.py                  # Flask application
 │   ├── static/                 # Static files (CSS, JS)
 │   └── templates/              # HTML templates
-├── docs/                       # Documentation
-│   └── implementation_report.ipynb  # Jupyter notebook report
 ├── tests/                      # Tests
 ├── data/                       # Database files
 ├── visualizations/             # B+ Tree visualizations
@@ -38,6 +37,7 @@ bplus_tree_implementation/
 ├── init_database.py            # Database initialization script
 ├── main.py                     # Main script to run the application
 └── README.md                   # Project documentation
+├── implementation_report.ipynb                     # Documentation
 ```
 
 ## Requirements
@@ -137,6 +137,3 @@ To view the report, run:
 jupyter notebook docs/implementation_report.ipynb
 ```
 
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
